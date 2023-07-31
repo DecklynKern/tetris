@@ -3,6 +3,17 @@
 
 #include "../include/main.h"
 
+const Uint32 piece_colours[8] = {
+    (Uint32) RGB(  0,   0,   0),
+    (Uint32) RGB(255, 128,   0),
+    (Uint32) RGB(  0,   0, 255),
+    (Uint32) RGB(255, 255,   0),
+    (Uint32) RGB(255,   0, 255),
+    (Uint32) RGB(  0, 255,   0),
+    (Uint32) RGB(  0, 255, 255),
+    (Uint32) RGB(255,   0,   0)
+};
+
 void draw_mino(SDL_Renderer* renderer, int x, int y, MinoType type) {
 
     SDL_Rect rect = {
@@ -12,41 +23,7 @@ void draw_mino(SDL_Renderer* renderer, int x, int y, MinoType type) {
         .h = SCALE
     };
 
-    Uint32 colour;
-
-    switch (type) {
-        case None:
-            colour = COLOUR_NONE;
-            break;
-
-        case L:
-            colour = COLOUR_L;
-            break;
-
-        case J:
-            colour = COLOUR_J;
-            break;
-
-        case O:
-            colour = COLOUR_O;
-            break;
-
-        case S:
-            colour = COLOUR_S;
-            break;
-
-        case Z:
-            colour = COLOUR_Z;
-            break;
-
-        case T:
-            colour = COLOUR_T;
-            break;
-
-        case I:
-            colour = COLOUR_I;
-            break;
-    }
+    Uint32 colour = piece_colours[type];
 
     SDL_SetRenderDrawColor(renderer, GET_R(colour), GET_G(colour), GET_B(colour), GET_A(colour));
 
