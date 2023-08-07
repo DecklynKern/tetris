@@ -1,13 +1,13 @@
-#include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_scancode.h>
-#include <SDL2/SDL_video.h>
 #include <stdio.h>
 #include <time.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
+#include <SDL2/SDL_video.h>
 
 #include "../include/main.h"
 
@@ -23,7 +23,7 @@ int main() {
         "Tetris!",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        BOARD_WIDTH * SCALE,
+        BOARD_WIDTH * SCALE + 5 * SCALE,
         (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE,
         0
     );
@@ -32,112 +32,65 @@ int main() {
 
     const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
-    Board board = {None};
-    Piece piece;
+    GameData state = {0};
+    memcpy(&state.gamemode, &tgm1_mode, sizeof(Gamemode));
 
-    int line_clear_timer = 0;
-    int are_timer = ARE_DELAY;
-    int down_held = 0;
-    int das_timer = 0;
-    int das = 0;
-    int das_direction = 0;
-    int lock_delay_timer = LOCK_DELAY;
-    int gravity_count = 0;
-
-	int close = 0;
+	bool close = false;
 
 	while (!close) {
 
 		SDL_Event event;
 
-        SDL_Scancode last_pressed = 0;
-
 		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
+            switch (event.type) {
 
 			case SDL_QUIT:
-				close = 1;
-				break;
+                close = true;
+                break;
 
-			case SDL_KEYDOWN:
+            case SDL_KEYDOWN:
 
                 if (event.key.repeat) {
                     continue;
                 }
 
-                last_pressed = event.key.keysym.scancode;
-
-				switch (event.key.keysym.scancode) {
+                switch (event.key.keysym.scancode) {
                     case SDL_SCANCODE_LEFT:
-
-                        if (!line_clear_timer && !are_timer) {
-                            try_move(&board, &piece, -1, 0);
-                        }
-
-                        das_timer = DAS_DELAY;
-                        das = 0;
-                        das_direction = -1;
-
+                        input_left(&state);
                         break;
 
                     case SDL_SCANCODE_RIGHT:
-
-                        if (!line_clear_timer && !are_timer) {
-                            try_move(&board, &piece, 1, 0);
-                        }
-
-                        das_timer = DAS_DELAY;
-                        das = 0;
-                        das_direction = 1;
-
-                        break;
-
-                    case SDL_SCANCODE_DOWN:
-                        down_held = 1;
+                        input_right(&state);
                         break;
 
                     case SDL_SCANCODE_Z:
-                        if (!line_clear_timer && !are_timer) {
-                            try_rotate_piece(&board, &piece, 1);
-                        }
+                        input_rotate_ccw(&state);
                         break;
 
                     case SDL_SCANCODE_X:
-                        if (!line_clear_timer && !are_timer) {
-                            try_rotate_piece(&board, &piece, -1);
-                        }
+                        input_rotate_cw(&state);
                         break;
 
                     default:
                         break;
 				}
 
+                break;
+
             case SDL_KEYUP:
 
-                if (event.key.repeat || event.key.keysym.scancode == last_pressed) {
+                if (event.key.repeat) {
                     continue;
                 }
 
                 switch (event.key.keysym.scancode) {
 
                     case SDL_SCANCODE_LEFT:
-                        if (das_direction == -1 && (das_timer || das)) {
-                            das_timer = 0;
-                            das = 0;
-                            das_direction = 0;
-                        }
+                        release_left(&state);
                         break;
 
                     case SDL_SCANCODE_RIGHT:
-                        if (das_direction == 1 && (das_timer || das)) {
-                            das_timer = 0;
-                            das = 0;
-                            das_direction = 0;
-                        }
-                        break;
-
-                    case SDL_SCANCODE_DOWN:
-                        down_held = 0;
+                        release_right(&state);
                         break;
 
                     default:
@@ -146,106 +99,30 @@ int main() {
 			}
 		}
 
-        // technically missing das change restriction on frame when piece spawns
-        if (das_timer && !line_clear_timer && are_timer <= ARE_DELAY - 4 && are_timer != 1) {
+        // for (int key = 0; key < _Num_Holdable_Keys; key++) {
+        //     state.held_inputs[key] = ;
+        // }
 
-            das_timer--;
+        state.held_inputs[Input_Left] = key_state[SDL_SCANCODE_LEFT];
+        state.held_inputs[Input_Right] = key_state[SDL_SCANCODE_RIGHT];
+        state.held_inputs[Input_Down] = key_state[SDL_SCANCODE_DOWN];
+        state.held_inputs[Input_Rot_CW] = key_state[SDL_SCANCODE_Z];
+        state.held_inputs[Input_Rot_CCW] = key_state[SDL_SCANCODE_X];
 
-            if (!das_timer) {
-                das = 1;
-            }
-        }
-
-        if (line_clear_timer) {
-
-            line_clear_timer--;
-
-            if (!line_clear_timer) {
-                are_timer = ARE_DELAY;
-            }
-
-        } else if (are_timer) {
-
-            are_timer--;
-        
-            if (!are_timer) {
-
-                Rotation irs_rotation;
-
-                if (key_state[SDL_SCANCODE_Z]) {
-                    irs_rotation = Rot_W;
-
-                } else if (key_state[SDL_SCANCODE_X]) {
-                    irs_rotation = Rot_E;
-                    
-                } else {
-                    irs_rotation = Rot_N;
-                }
-
-                next_piece(&piece, irs_rotation);
-
-                lock_delay_timer = LOCK_DELAY;
-            
-                if (!placement_valid(&board, &piece.minos, piece.x, piece.y)) {
-                    close = 1;
-                }
-            }
-
-        } else {
-
-            if (down_held) {
-                gravity_count += SOFT_DROP_FACTOR;
-            }
-
-            gravity_count += GRAVITY;
-
-            while (gravity_count > GRAVITY_FACTOR) {
-
-                gravity_count -= GRAVITY_FACTOR;
-
-                if (!try_move(&board, &piece, 0, 1)) {
-                    break;
-                }
-            }
-
-            if (das) {
-                try_move(&board, &piece, das_direction, 0);
-            }
-
-            if (placement_valid(&board, &piece.minos, piece.x, piece.y + 1)) {
-                lock_delay_timer = LOCK_DELAY;
-
-            } else {
-
-                gravity_count = 0;
-
-                if (!lock_delay_timer || down_held) {
-                    
-                    if (lock_piece(&board, &piece)) {
-                        line_clear_timer = LINE_CLEAR_DELAY;
-
-                    } else {
-                        are_timer = ARE_DELAY;
-                    }
-
-                } else {
-                    lock_delay_timer--;
-                }
-            }
-        }
+        close |= update(&state);
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
         for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
             for (int x = 0; x < BOARD_WIDTH; x++) {
-                draw_mino(renderer, x, y, board.minos[y + INVISIBLE_ROWS][x]);
+                draw_mino(renderer, x, y, state.board.minos[y + INVISIBLE_ROWS][x]);
             }
         }
 
-        if (!line_clear_timer && !are_timer) {
+        if (!state.line_clear_timer && !state.are_timer) {
             for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-                draw_mino(renderer, piece.x + piece.minos[i][0], piece.y + piece.minos[i][1] - INVISIBLE_ROWS, piece.type);
+                draw_mino(renderer, state.piece.x + state.piece.minos[i].x, state.piece.y + state.piece.minos[i].y - INVISIBLE_ROWS, state.piece.type);
             }
         }
 

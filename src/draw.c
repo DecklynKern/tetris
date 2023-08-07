@@ -3,6 +3,12 @@
 
 #include "../include/main.h"
 
+#define RGB(r, g, b) ((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
+#define GET_R(c)  (c >> 24)
+#define GET_G(c)  ((c << 8) >> 24)
+#define GET_B(c) ((c << 16) >> 24)
+#define GET_A(c) ((c << 24) >> 24)
+
 const Uint32 piece_colours[8] = {
     (Uint32) RGB(  0,   0,   0),
     (Uint32) RGB(255, 128,   0),
