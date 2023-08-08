@@ -1,4 +1,7 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
 #include <stdbool.h>
 
 #ifndef MAIN
@@ -11,18 +14,22 @@
 #define ROW_BYTES BOARD_WIDTH * sizeof(MinoType)
 #define MAX_KICKS 5
 
+#define GRAVITY_FACTOR 256
+
 #define PIECE_MINO_COUNT 4
 #define PIECE_MINOS_BYTES (PIECE_MINO_COUNT * 2 * sizeof(int))
 
-enum tagHoldableKeys {
+#define FONT_SIZE 16
+
+enum tagInputs {
     Input_Left = 0,
     Input_Right,
     Input_Down,
     Input_Rot_CW,
     Input_Rot_CCW,
-    _Num_Holdable_Keys
+    NUM_HOLDABLE_KEYS
 };
-typedef enum tagHoldableKeys HoldableKeys;
+typedef enum tagInputs Inputs;
 
 struct tagPoint {
     int x;
@@ -44,9 +51,9 @@ typedef enum tagMinoType MinoType;
 
 enum tagRotation {
     Rot_N = 0,
-    Rot_W,
+    Rot_E,
     Rot_S,
-    Rot_E
+    Rot_W
 };
 typedef enum tagRotation Rotation;
 
@@ -77,23 +84,33 @@ typedef struct tagBoard Board;
 struct tagGameData;
 typedef struct tagGameData GameData;
 struct tagGamemode {
+
+    int screen_width;
+    int screen_height;
+
     int line_clear_delay;
     int are_delay;
     int lock_delay;
-    int gravity_factor;
+    int gravity;
     int das_delay;
     int soft_drop_factor;
-    int gravity;
+
     const bool can_hold;
     const int num_kicks;
     const Point (*piece_rot_minos)[8][4][PIECE_MINO_COUNT];
-    void (*new_piece)(GameData* state);
-    Point (*get_kick)(GameData* state, Rotation new_rotation, int attempt);
+    
+    void (*init)();
+    Point (*get_kick)(Rotation new_rotation, int attempt);
+    void (*on_lock)();
+    void (*on_line_clear)(int num_lines);
+    MinoType (*generate_next_piece)();
+    void (*draw)(SDL_Renderer* renderer);
+
 };
 typedef struct tagGamemode Gamemode;
 
 struct tagGameData {
-    bool held_inputs[_Num_Holdable_Keys];
+    bool input_held[NUM_HOLDABLE_KEYS];
     Piece piece;
     MovementData movement;
     Board board;
@@ -103,27 +120,26 @@ struct tagGameData {
 };
 
 // game.c
-void input_left(GameData* state);
-void input_right(GameData* state);
-void input_rotate_cw(GameData* state);
-void input_rotate_ccw(GameData* state);
+void input_left();
+void input_right();
+void input_rotate_cw();
+void input_rotate_ccw();
 
-void release_left(GameData* state);
-void release_right(GameData* state);
+void release_left();
+void release_right();
 
-bool update(GameData* state);
-
-// piece.c
-int placement_valid(Board* board, Point piece_minos[PIECE_MINO_COUNT], int piece_x, int piece_y);
-int lock_piece(Board* board, Piece* piece);
-int try_move(Board* board, Piece* piece, int dx, int dy);
-void try_rotate_piece(GameData* state, int rotation_amount);
+void game_init();
+bool update();
 
 // draw.c
-extern const Uint32 piece_colours[8];
-void draw_mino(SDL_Renderer* renderer, int x, int y, MinoType type);
+void init_font();
+void draw_mino(SDL_Renderer* renderer, int cell_x, int cell_y, MinoType type);
+void draw_text(SDL_Renderer* renderer, int x, int y, const char* text);
 
-// tgm.c
-extern const Gamemode tgm1_mode;
+// mode.c
+bool load_gamemode(int argc, char* argv[]);
+
+// main.c
+extern GameData state;
 
 #endif
