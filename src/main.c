@@ -57,16 +57,16 @@ int main(int argc, char* argv[]) {
     game_init();
 
     bool pause = false;
-	bool close = false;
+    bool close = false;
 
-	while (!close) {
+    while (!close) {
 
-		SDL_Event event;
+        SDL_Event event;
 
-		while (SDL_PollEvent(&event)) {
+        while (SDL_PollEvent(&event)) {
             switch (event.type) {
 
-			case SDL_QUIT:
+            case SDL_QUIT:
                 close = true;
                 break;
 
@@ -109,8 +109,8 @@ int main(int argc, char* argv[]) {
                     release_right();
                 
                 }
-			}
-		}
+            }
+        }
 
         for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
             state.input_held[key] = key_state[mapped_keys[key]];
@@ -121,22 +121,22 @@ int main(int argc, char* argv[]) {
             close |= update();
 
             SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
-		    SDL_RenderClear(renderer);
+            SDL_RenderClear(renderer);
 
             state.gamemode.draw(renderer);
 
-		    SDL_RenderPresent(renderer);
+            SDL_RenderPresent(renderer);
         
         }
 
-		SDL_Delay(1000 / 60);
+        SDL_Delay(1000 / 60);
         
-	}
+    }
 
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
 	
-	SDL_Quit();
+    SDL_Quit();
 
     return 0;
 
