@@ -2,6 +2,8 @@
 
 #include "../../include/main.h"
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 static const Point piece_rot_minos[8][4][PIECE_MINO_COUNT] = {
     {},
     {   // O
@@ -50,51 +52,50 @@ static const Point piece_rot_minos[8][4][PIECE_MINO_COUNT] = {
 
 static MinoType next_piece;
 
+static int start_level = 0;
 static int level = 0;
 static int lines = 0;
 static int score = 0;
 
 #define NUM_LEVELS 30
 
-static const int gravity_table[NUM_LEVELS] = {
-    5,   // actually 48 frames/row, will have to fix this at some point
-    6,   // 43 frames/row
-    7,   // 38 frames/row
-    8,   // 33 frames/row
-    9,   // 28 frames/row
-    11,  // 23 frames/row
-    14,  // 18 frames/row
-    20,  // 13 frames/row
-    32,
-    43,  // 6 frames/row
-    51, // 5 frames/row
-    51, // 5 frames/row
-    51, // 5 frames/row
-    64,
-    64,
-    64,
-    85, // 3 frames/row
-    85, // 3 frames/row
-    85, // 3 frames/row
-    128,
-    128,
-    128,
-    128,
-    128,
-    128,
-    128,
-    128,
-    128,
-    128,
-    256
+static const int gravity_factor_table[NUM_LEVELS] = {
+    48,
+    43,
+    38,
+    33,
+    28,
+    23,
+    18,
+    13,
+    8,
+    6,
+    5,
+    5,
+    5,
+    4,
+    4,
+    4,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    1
 };
 
 static void init() {
-
     next_piece = rand() % 7 + 1;
-
-    state.gamemode.gravity = gravity_table[level];
-
+    state.gamemode.gravity_factor = gravity_factor_table[level];
+    state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
 }
 
 static void on_lock() {
@@ -104,12 +105,17 @@ static void on_line_clear(int num_lines) {
 
     lines += lines;
 
-    if (lines > 10) {
+    if ((level != start_level && lines >= 10) ||
+        (level == start_level && (
+            lines >= start_level * 10 + 10 ||
+            lines >= MAX(100, start_level * 10 - 50)))
+    ) {
 
         level++;
         lines -= 10;
 
-        state.gamemode.gravity = gravity_table[level];
+        state.gamemode.gravity_factor = gravity_factor_table[level];
+        state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
 
     }
 
@@ -132,7 +138,6 @@ static void on_line_clear(int num_lines) {
             break;
 
     }
-
 }
 
 static MinoType new_piece() {
@@ -162,17 +167,9 @@ static void draw(SDL_Renderer* renderer) {
         draw_mino(renderer, 5 + piece_rot_minos[next_piece][Rot_N][i].x, piece_rot_minos[next_piece][Rot_N][i].y, next_piece);
     }
 
-    char level_text[15];
-    sprintf(level_text, "Level: %d", level);
-    draw_text(renderer, BOARD_WIDTH * SCALE, 100, level_text);
-
-    char lines_text[15];
-    sprintf(lines_text, "Lines: %d", lines);
-    draw_text(renderer, BOARD_WIDTH * SCALE, 115, lines_text);
-
-    char score_text[20];
-    sprintf(score_text, "Score: %d", score);
-    draw_text(renderer, BOARD_WIDTH * SCALE, 130, score_text);
+    draw_info_text(renderer, 0, "Level: %d", level);
+    draw_info_text(renderer, 1, "Lines: %d", lines);
+    draw_info_text(renderer, 2, "Score: %d", score);
 
 }
 
@@ -183,18 +180,18 @@ const Gamemode nes_mode = {
 
     .line_clear_delay = 18, // 17-20 depending on internal frame counter???
     .are_delay = 10, // 10-18 depending on height at lock
+    .gravity = 1,
     .lock_delay = 0,
     .das_delay = 16,
-    .soft_drop_factor = 128,
 
     .can_hold = false,
     .num_kicks = 0,
     .piece_rot_minos = &piece_rot_minos,
 
-    .init = &init,
-    .on_lock = &on_lock,
-    .on_line_clear = &on_line_clear,
-    .generate_next_piece = &new_piece,
-    .draw = &draw
+    .init = init,
+    .on_lock = on_lock,
+    .on_line_clear = on_line_clear,
+    .generate_next_piece = new_piece,
+    .draw = draw
 
 };

@@ -64,3 +64,9 @@ void draw_text(SDL_Renderer* renderer, int x, int y, const char* text) {
     SDL_DestroyTexture(texture);
 
 }
+
+void draw_info_text(SDL_Renderer* renderer, int row, const char* format, int value) {
+    char text[20];
+    sprintf(text, format, value);
+    draw_text(renderer, BOARD_WIDTH * SCALE, 100 + row * 15, text);
+}

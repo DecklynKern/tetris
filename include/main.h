@@ -14,8 +14,6 @@
 #define ROW_BYTES BOARD_WIDTH * sizeof(MinoType)
 #define MAX_KICKS 5
 
-#define GRAVITY_FACTOR 256
-
 #define PIECE_MINO_COUNT 4
 #define PIECE_MINOS_BYTES (PIECE_MINO_COUNT * 2 * sizeof(int))
 
@@ -92,6 +90,7 @@ struct tagGamemode {
     int are_delay;
     int lock_delay;
     int gravity;
+    int gravity_factor;
     int das_delay;
     int soft_drop_factor;
 
@@ -104,6 +103,7 @@ struct tagGamemode {
     void (*on_lock)();
     void (*on_line_clear)(int num_lines);
     MinoType (*generate_next_piece)();
+    void (*update)();
     void (*draw)(SDL_Renderer* renderer);
 
 };
@@ -135,6 +135,7 @@ bool update();
 void init_font();
 void draw_mino(SDL_Renderer* renderer, int cell_x, int cell_y, MinoType type);
 void draw_text(SDL_Renderer* renderer, int x, int y, const char* text);
+void draw_info_text(SDL_Renderer* renderer, int row, const char* format, int value);
 
 // mode.c
 bool load_gamemode(int argc, char* argv[]);

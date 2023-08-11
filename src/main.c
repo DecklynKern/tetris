@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
 
     game_init();
 
+    bool pause = false;
 	bool close = false;
 
 	while (!close) {
@@ -71,7 +72,12 @@ int main(int argc, char* argv[]) {
 
             case SDL_KEYDOWN:
 
-                if (event.key.repeat) {
+                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+                    pause = !pause;
+                    continue;
+                }
+
+                if (pause || event.key.repeat) {
                     continue;
                 }
 
@@ -92,7 +98,7 @@ int main(int argc, char* argv[]) {
 
             case SDL_KEYUP:
 
-                if (event.key.repeat) {
+                if (pause || event.key.repeat) {
                     continue;
                 }
 
@@ -110,14 +116,19 @@ int main(int argc, char* argv[]) {
             state.input_held[key] = key_state[mapped_keys[key]];
         }
 
-        close |= update();
+        if (!pause) {
+            
+            close |= update();
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-		SDL_RenderClear(renderer);
+            SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+		    SDL_RenderClear(renderer);
 
-        state.gamemode.draw(renderer);
+            state.gamemode.draw(renderer);
 
-		SDL_RenderPresent(renderer);
+		    SDL_RenderPresent(renderer);
+        
+        }
+
 		SDL_Delay(1000 / 60);
         
 	}

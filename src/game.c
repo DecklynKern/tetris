@@ -87,7 +87,7 @@ static void try_rotate_piece(int rotation_amount) {
 
     while (!placement_valid(&state.board, new_minos, state.piece.x + kick.x, state.piece.y + kick.y)) {
 
-        if (attempt == state.gamemode.num_kicks) {
+        if (attempt > state.gamemode.num_kicks) {
             return;
         }
         
@@ -228,13 +228,16 @@ bool update() {
 
     state.movement.gravity_count += state.gamemode.gravity;
 
-    while (state.movement.gravity_count > GRAVITY_FACTOR) {
+    while (state.movement.gravity_count > state.gamemode.gravity_factor) {
 
-        state.movement.gravity_count -= GRAVITY_FACTOR;
+        state.movement.gravity_count -= state.gamemode.gravity_factor;
 
         if (!try_move(&state.board, &state.piece, 0, 1)) {
             break;
         }
+        
+        state.movement.lock_delay_timer = state.gamemode.lock_delay;
+
     }
 
     if (state.movement.das) {
@@ -265,6 +268,10 @@ bool update() {
         } else {
             state.movement.lock_delay_timer--;
         }
+    }
+
+    if (state.gamemode.update) {
+        state.gamemode.update();
     }
 
     return false;

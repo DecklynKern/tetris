@@ -89,7 +89,11 @@ const int spin_kicks[8][MAX_KICKS][2];
 
 static MinoType next_piece;
 static MinoType history[HISTORY_LEN];
-static int level = 0;
+
+static int level = 490;
+static int score = 0;
+static int combo = 1;
+static int soft = 0;
 
 static void tgm1_init() {
 
@@ -144,25 +148,42 @@ static Point get_kick(Rotation new_rotation, int attempt) {
 }
 
 static void on_lock() {
+    
     if (level % 100 != 99 && level != 998) {
         level++;
     }
+
+    combo = 1;
+    soft = 0;
+
 }
 
 static void on_line_clear(int num_lines) {
 
-    level += num_lines;
+    int bravo = 4;
 
-    int i = 0;
-
-    for (; i < NUM_SPEED_LEVELS; i++) {
-        if (gravity_table[i][0] > level) {
-            i--;
-            break;
+    for (int y = 0; y < BOARD_HEIGHT; y++) {
+        for (int x = 0; x < BOARD_WIDTH; x++) {
+            if (state.board.minos[y][x]) {
+                bravo = 1;
+                goto no_bravo;
+            }
         }
     }
+    no_bravo:
 
-    state.gamemode.gravity = gravity_table[i][1];
+    combo += 2 * num_lines - 2;
+    score += ((level + num_lines + 3) / 4 + soft) * num_lines * combo * bravo;
+
+    level += num_lines;
+
+    int i = 1;
+
+    while (i < NUM_SPEED_LEVELS && gravity_table[i][0] <= level) {
+        i++;
+    }
+
+    state.gamemode.gravity = gravity_table[i - 1][1];
 
 }
 
@@ -213,6 +234,13 @@ static MinoType generate_next_piece() {
 
 }
 
+static void tgm_update() {
+
+    if (state.input_held[Input_Down]) {
+        soft++;
+    }
+}
+
 static void draw(SDL_Renderer* renderer) {
 
     for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
@@ -231,9 +259,8 @@ static void draw(SDL_Renderer* renderer) {
         draw_mino(renderer, 5 + piece_rot_minos[next_piece][Rot_N][i].x, piece_rot_minos[next_piece][Rot_N][i].y, next_piece);
     }
 
-    char level_text[15];
-    sprintf(level_text, "Level: %d", level);
-    draw_text(renderer, BOARD_WIDTH * SCALE, 100, level_text);
+    draw_info_text(renderer, 0, "Level: %d", level);
+    draw_info_text(renderer, 1, "Score: %d", score);
 
 }
 
@@ -246,6 +273,7 @@ const Gamemode tgm1_mode = {
     .are_delay = 30,
     .lock_delay = 30,
     .gravity = 4,
+    .gravity_factor = 256,
     .das_delay = 16,
     .soft_drop_factor = 256,
 
@@ -253,12 +281,13 @@ const Gamemode tgm1_mode = {
     .num_kicks = 2,
     .piece_rot_minos = &piece_rot_minos,
 
-    .init = &tgm1_init,
-    .get_kick = &get_kick,
-    .on_lock = &on_lock,
-    .on_line_clear = &on_line_clear,
-    .generate_next_piece = &generate_next_piece,
-    .draw = &draw
+    .init = tgm1_init,
+    .get_kick = get_kick,
+    .on_lock = on_lock,
+    .on_line_clear = on_line_clear,
+    .generate_next_piece = generate_next_piece,
+    .update = tgm_update,
+    .draw = draw
 
 };
 
@@ -271,6 +300,7 @@ const Gamemode tap_death_mode = {
     .are_delay = 18,
     .lock_delay = 30,
     .gravity = 5120,
+    .gravity_factor = 256,
     .das_delay = 12,
     .soft_drop_factor = 256,
 
@@ -278,11 +308,12 @@ const Gamemode tap_death_mode = {
     .num_kicks = 2,
     .piece_rot_minos = &piece_rot_minos,
 
-    .init = &tgm2_init,
-    .get_kick = &get_kick,
-    .on_lock = &on_lock,
-    .on_line_clear = &on_line_clear,
-    .generate_next_piece = &generate_next_piece,
-    .draw = &draw
+    .init = tgm2_init,
+    .get_kick = get_kick,
+    .on_lock = on_lock,
+    .on_line_clear = on_line_clear,
+    .generate_next_piece = generate_next_piece,
+    .update = tgm_update,
+    .draw = draw
 
 };
