@@ -4,8 +4,7 @@
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-static const Point piece_rot_minos[8][4][PIECE_MINO_COUNT] = {
-    {},
+static const Point nrs_minos[7][4][PIECE_MINO_COUNT] = {
     {   // O
         {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
         {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
@@ -98,9 +97,6 @@ static void init() {
     state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
 }
 
-static void on_lock() {
-}
-
 static void on_line_clear(int num_lines) {
 
     lines += lines;
@@ -149,34 +145,31 @@ static MinoType new_piece() {
 
 }
 
-static void draw(SDL_Renderer* renderer) {
+static void draw() {
 
     for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
-            draw_mino(renderer, x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x]);
+            draw_mino(x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x]);
         }
     }
 
     if (!state.line_clear_timer && !state.are_timer) {
         for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-            draw_mino(renderer, state.piece.x + state.piece.minos[i].x, state.piece.y + state.piece.minos[i].y - INVISIBLE_ROWS + 5, state.piece.type);
+            draw_mino(state.piece.x + state.piece.minos[i].x, state.piece.y + state.piece.minos[i].y - INVISIBLE_ROWS + 5, state.piece.type);
         }
     }
 
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        draw_mino(renderer, 5 + piece_rot_minos[next_piece][Rot_N][i].x, piece_rot_minos[next_piece][Rot_N][i].y, next_piece);
+        draw_mino(5 + nrs_minos[next_piece][Rot_N][i].x, nrs_minos[next_piece][Rot_N][i].y, next_piece);
     }
 
-    draw_info_text(renderer, 0, "Level: %d", level);
-    draw_info_text(renderer, 1, "Lines: %d", lines);
-    draw_info_text(renderer, 2, "Score: %d", score);
+    draw_info_value(0, "Level: %d", level);
+    draw_info_value(1, "Lines: %d", lines);
+    draw_info_value(2, "Score: %d", score);
 
 }
 
 const Gamemode nes_mode = {
-
-    .screen_width = BOARD_WIDTH * SCALE + 5 * SCALE,
-    .screen_height = (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + 5 * SCALE,
 
     .line_clear_delay = 18, // 17-20 depending on internal frame counter???
     .are_delay = 10, // 10-18 depending on height at lock
@@ -186,10 +179,9 @@ const Gamemode nes_mode = {
 
     .can_hold = false,
     .num_kicks = 0,
-    .piece_rot_minos = &piece_rot_minos,
+    .piece_rot_minos = &nrs_minos,
 
     .init = init,
-    .on_lock = on_lock,
     .on_line_clear = on_line_clear,
     .generate_next_piece = new_piece,
     .draw = draw

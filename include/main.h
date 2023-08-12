@@ -19,95 +19,93 @@
 
 #define FONT_SIZE 16
 
-enum tagInputs {
+typedef enum {
     Input_Left = 0,
     Input_Right,
     Input_Down,
+    Input_InstantDrop,
     Input_Rot_CW,
     Input_Rot_CCW,
     NUM_HOLDABLE_KEYS
-};
-typedef enum tagInputs Inputs;
+} Inputs;
 
-struct tagPoint {
+typedef struct {
     int x;
     int y;
-};
-typedef struct tagPoint Point;
+} Point;
 
-enum tagMinoType {
-    None = 0,
+typedef enum {
+    Empty = 0,
     O,
     S,
     Z,
     L,
     J,
     T,
-    I
-};
-typedef enum tagMinoType MinoType;
+    I,
+    Garbage
+} MinoType;
 
-enum tagRotation {
+typedef enum {
     Rot_N = 0,
     Rot_E,
     Rot_S,
     Rot_W
-};
-typedef enum tagRotation Rotation;
+} Rotation;
 
-struct tagMovementData {
+typedef enum {
+    NoInstantDrop = 0,
+    SonicDrop,
+    HardDrop
+} InstantDropType;
+
+typedef struct {
     int das_timer;
     bool das;
     int das_direction;
     int lock_delay_timer;
     int gravity_count;
     bool down_held;
-};
-typedef struct tagMovementData MovementData;
+} MovementData;
 
-struct tagPiece {
+typedef struct {
     Point minos[PIECE_MINO_COUNT];
     MinoType type;
     int x;
     int y;
     Rotation rotation;
-};
-typedef struct tagPiece Piece;
+} Piece;
 
-struct tagBoard {
+typedef struct {
     MinoType minos[BOARD_HEIGHT][BOARD_WIDTH];
-};
-typedef struct tagBoard Board;
+} Board;
 
 struct tagGameData;
 typedef struct tagGameData GameData;
-struct tagGamemode {
-
-    int screen_width;
-    int screen_height;
+typedef struct {
 
     int line_clear_delay;
     int are_delay;
     int lock_delay;
-    int gravity;
-    int gravity_factor;
     int das_delay;
     int soft_drop_factor;
+    int gravity;
+    int gravity_factor;
 
     const bool can_hold;
+    const InstantDropType instant_drop_type;
     const int num_kicks;
-    const Point (*piece_rot_minos)[8][4][PIECE_MINO_COUNT];
+    const Point (*piece_rot_minos)[7][4][PIECE_MINO_COUNT];
     
     void (*init)();
     Point (*get_kick)(Rotation new_rotation, int attempt);
-    void (*on_lock)();
+    void (*on_lock)(bool cleared_lines);
     void (*on_line_clear)(int num_lines);
     MinoType (*generate_next_piece)();
     void (*update)();
-    void (*draw)(SDL_Renderer* renderer);
+    void (*draw)();
 
-};
-typedef struct tagGamemode Gamemode;
+} Gamemode;
 
 struct tagGameData {
     bool input_held[NUM_HOLDABLE_KEYS];
@@ -122,6 +120,7 @@ struct tagGameData {
 // game.c
 void input_left();
 void input_right();
+void input_instant_drop();
 void input_rotate_cw();
 void input_rotate_ccw();
 
@@ -133,14 +132,16 @@ bool update();
 
 // draw.c
 void init_font();
-void draw_mino(SDL_Renderer* renderer, int cell_x, int cell_y, MinoType type);
-void draw_text(SDL_Renderer* renderer, int x, int y, const char* text);
-void draw_info_text(SDL_Renderer* renderer, int row, const char* format, int value);
+void draw_mino(int cell_x, int cell_y, MinoType type);
+void draw_text(int x, int y, const char* text);
+void draw_info_value(int row, const char* format, int value);
+void draw_info_text(int row, const char* format, char* text);
 
 // mode.c
 bool load_gamemode(int argc, char* argv[]);
 
 // main.c
+extern SDL_Renderer* renderer;
 extern GameData state;
 
 #endif

@@ -15,11 +15,13 @@ const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
     SDL_SCANCODE_LEFT,
     SDL_SCANCODE_RIGHT,
     SDL_SCANCODE_DOWN,
+    SDL_SCANCODE_UP,
     SDL_SCANCODE_Z,
     SDL_SCANCODE_X
 };
 
 GameData state = {0};
+SDL_Renderer* renderer;
 
 int main(int argc, char* argv[]) {
 
@@ -43,11 +45,11 @@ int main(int argc, char* argv[]) {
         "Tetris!",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        state.gamemode.screen_width,
-        state.gamemode.screen_height,
+        BOARD_WIDTH * SCALE + 5 * SCALE,
+        (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + 5 * SCALE,
         0
     );
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
@@ -87,6 +89,9 @@ int main(int argc, char* argv[]) {
                 } else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
                     input_right();
                 
+                } else if (event.key.keysym.scancode == mapped_keys[Input_InstantDrop]) {
+                    input_instant_drop();
+
                 } else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CW]) {
                     input_rotate_cw();
 
@@ -117,17 +122,15 @@ int main(int argc, char* argv[]) {
         }
 
         if (!pause) {
-            
             close |= update();
-
-            SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
-            SDL_RenderClear(renderer);
-
-            state.gamemode.draw(renderer);
-
-            SDL_RenderPresent(renderer);
-        
         }
+
+        SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
+        SDL_RenderClear(renderer);
+
+        state.gamemode.draw();
+
+        SDL_RenderPresent(renderer);
 
         SDL_Delay(1000 / 60);
         
@@ -135,7 +138,7 @@ int main(int argc, char* argv[]) {
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-	
+    
     SDL_Quit();
 
     return 0;
