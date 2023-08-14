@@ -1,9 +1,9 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_keyboard.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "../include/main.h"
 
-static bool placement_valid(Point piece_minos[PIECE_MINO_COUNT], int piece_x, int piece_y) {
+static bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
     
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
 
@@ -28,7 +28,7 @@ static void lock_piece() {
     int lines_cleared = 0;
 
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        state.board.minos[state.piece.y + state.piece.minos[i].y][state.piece.x + state.piece.minos[i].x] = state.piece.type;
+        state.board.minos[state.piece.y + get_piece_minos()[i].y][state.piece.x + get_piece_minos()[i].x] = state.piece.type;
     }
 
     for (int y = 0; y < BOARD_HEIGHT; y++) {
@@ -78,7 +78,7 @@ static void lock_piece() {
 
 static int try_move(int dx, int dy) {
 
-    if (placement_valid(state.piece.minos, state.piece.x + dx, state.piece.y + dy)) {
+    if (placement_valid(get_piece_minos(), state.piece.x + dx, state.piece.y + dy)) {
 
         state.piece.x += dx;
         state.piece.y += dy;
@@ -91,12 +91,10 @@ static int try_move(int dx, int dy) {
 
 }
 
-static void try_rotate_piece(int rotation_amount) {
+static void try_rotate(int rotation_amount) {
 
     Rotation new_rotation = (state.piece.rotation + rotation_amount) % 4;
-    Point new_minos[PIECE_MINO_COUNT];
-
-    memcpy(new_minos, (*state.gamemode.piece_rot_minos)[state.piece.type - 1][new_rotation], PIECE_MINOS_BYTES);
+    const Point *new_minos = (const Point*)(*state.gamemode.piece_rot_minos)[state.piece.type - 1][new_rotation];
 
     int attempt = 1;
     Point kick = {0, 0};
@@ -108,29 +106,31 @@ static void try_rotate_piece(int rotation_amount) {
         }
         
         kick = state.gamemode.get_kick(new_rotation, attempt);
-        attempt += 1;
+        attempt++;
 
     }
 
     state.piece.x += kick.x;
     state.piece.y += kick.y;
-
-    memcpy(state.piece.minos, new_minos, PIECE_MINOS_BYTES);
     state.piece.rotation = new_rotation;
 
 }
 
-static void new_piece() {
+static void reset_position() {
 
     state.piece.x = 4;
     state.piece.y = INVISIBLE_ROWS;
     state.piece.rotation = Rot_N;
 
-    state.piece.type = (*state.gamemode.generate_next_piece)();
-    memcpy(state.piece.minos, (*state.gamemode.piece_rot_minos)[state.piece.type - 1][state.piece.rotation], PIECE_MINOS_BYTES);
-
     state.movement.lock_delay_timer = state.gamemode.lock_delay;
 
+}
+
+
+static void new_piece() {
+    state.piece.type = (*state.gamemode.generate_new_piece)();
+    state.has_held = false;
+    reset_position();
 }
 
 void input_left() {
@@ -140,7 +140,6 @@ void input_left() {
     }
 
     state.movement.das_timer = state.gamemode.das_delay;
-    state.movement.das = false;
     state.movement.das_direction = -1;
 
 }
@@ -152,7 +151,6 @@ void input_right() {
     }
 
     state.movement.das_timer = state.gamemode.das_delay;
-    state.movement.das = false;
     state.movement.das_direction = 1;
 
 }
@@ -167,7 +165,7 @@ void input_instant_drop() {
         return;
     }
 
-    while (placement_valid(state.piece.minos, state.piece.x, state.piece.y + 1)) {
+    while (placement_valid(get_piece_minos(), state.piece.x, state.piece.y + 1)) {
         state.piece.y++;
     }
 
@@ -178,30 +176,45 @@ void input_instant_drop() {
 
 void input_rotate_cw() {
     if (!state.line_clear_timer && !state.are_timer) {
-        try_rotate_piece(1);
+        try_rotate(1);
     }
 }
 
 void input_rotate_ccw() {
     if (!state.line_clear_timer && !state.are_timer) {
-        try_rotate_piece(-1);
+        try_rotate(-1);
     }
+}
+
+void input_hold() {
+
+    if (!state.gamemode.can_hold || state.has_held) {
+        return;
+    }
+
+    if (state.held_piece) {
+
+        MinoType temp = state.held_piece;
+        state.held_piece = state.piece.type;
+        state.piece.type = temp;
+
+        reset_position();
+
+    } else {
+        state.held_piece = state.piece.type;
+        new_piece();
+    }
+
+    state.has_held = true;
+
 }
 
 void release_left() {
-    if (state.movement.das_direction == -1 && (state.movement.das_timer || state.movement.das)) {
-        state.movement.das_timer = 0;
-        state.movement.das = 0;
-        state.movement.das_direction = 0;
-    }
+    state.movement.das_timer = 0;
 }
 
 void release_right() {
-    if (state.movement.das_direction == 1 && (state.movement.das_timer || state.movement.das)) {
-        state.movement.das_timer = 0;
-        state.movement.das = 0;
-        state.movement.das_direction = 0;
-    }
+    state.movement.das_timer = 0;
 }
 
 void release_down() {
@@ -212,6 +225,10 @@ void game_init() {
     new_piece();
 }
 
+const Point* get_piece_minos() {
+    return (const Point*)&(*state.gamemode.piece_rot_minos)[state.piece.type - 1][state.piece.rotation];
+}
+
 bool update() {
 
     // technically missing das change restrictions in tgm
@@ -220,7 +237,8 @@ bool update() {
         state.movement.das_timer--;
 
         if (!state.movement.das_timer) {
-            state.movement.das = 1;
+            state.movement.das_timer = state.gamemode.arr_delay;
+            try_move(state.movement.das_direction, 0);
         }
     }
 
@@ -244,7 +262,7 @@ bool update() {
 
             new_piece();
         
-            if (!placement_valid(state.piece.minos, state.piece.x, state.piece.y)) {
+            if (!placement_valid(get_piece_minos(), state.piece.x, state.piece.y)) {
                 return true;
             }
         }
@@ -271,18 +289,14 @@ bool update() {
 
     }
 
-    if (state.movement.das) {
-        try_move(state.movement.das_direction, 0);
-    }
-
-    if (placement_valid(state.piece.minos, state.piece.x, state.piece.y + 1)) {
+    if (placement_valid(get_piece_minos(), state.piece.x, state.piece.y + 1)) {
         state.movement.lock_delay_timer = state.gamemode.lock_delay;
 
     } else {
 
         state.movement.gravity_count = 0;
 
-        if (!state.movement.lock_delay_timer || state.input_held[Input_Down]) {
+        if (!state.movement.lock_delay_timer || (state.input_held[Input_Down] && state.gamemode.lock_on_down_held)) {
             lock_piece();
 
         } else {

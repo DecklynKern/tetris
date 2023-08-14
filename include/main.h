@@ -1,8 +1,13 @@
+#include <stdbool.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_scancode.h>
-#include <stdbool.h>
+#include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_video.h>
 
 #ifndef MAIN
 #define MAIN
@@ -15,7 +20,8 @@
 #define MAX_KICKS 5
 
 #define PIECE_MINO_COUNT 4
-#define PIECE_MINOS_BYTES (PIECE_MINO_COUNT * 2 * sizeof(int))
+
+#define RGB(r, g, b) ((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
 
 #define FONT_SIZE 16
 
@@ -26,6 +32,7 @@ typedef enum {
     Input_InstantDrop,
     Input_Rot_CW,
     Input_Rot_CCW,
+    Input_Hold,
     NUM_HOLDABLE_KEYS
 } Inputs;
 
@@ -61,7 +68,6 @@ typedef enum {
 
 typedef struct {
     int das_timer;
-    bool das;
     int das_direction;
     int lock_delay_timer;
     int gravity_count;
@@ -69,7 +75,6 @@ typedef struct {
 } MovementData;
 
 typedef struct {
-    Point minos[PIECE_MINO_COUNT];
     MinoType type;
     int x;
     int y;
@@ -88,33 +93,42 @@ typedef struct {
     int are_delay;
     int lock_delay;
     int das_delay;
+    int arr_delay;
     int soft_drop_factor;
     int gravity;
     int gravity_factor;
 
     const bool can_hold;
+    const bool lock_on_down_held;
     const InstantDropType instant_drop_type;
     const int num_kicks;
-    const Point (*piece_rot_minos)[7][4][PIECE_MINO_COUNT];
+    const Point (*const piece_rot_minos)[7][4][PIECE_MINO_COUNT];
     
-    void (*init)();
-    Point (*get_kick)(Rotation new_rotation, int attempt);
-    void (*on_lock)(bool cleared_lines);
-    void (*on_line_clear)(int num_lines);
-    MinoType (*generate_next_piece)();
-    void (*update)();
-    void (*draw)();
+    void (*const init)();
+    Point (*const get_kick)(Rotation new_rotation, int attempt);
+    void (*const on_lock)(bool cleared_lines);
+    void (*const on_line_clear)(int num_lines);
+    MinoType (*const generate_new_piece)();
+    void (*const update)();
+    void (*const draw)();
 
 } Gamemode;
 
 struct tagGameData {
-    bool input_held[NUM_HOLDABLE_KEYS];
+
     Piece piece;
     MovementData movement;
     Board board;
     Gamemode gamemode;
+
+    bool input_held[NUM_HOLDABLE_KEYS];
+
     int line_clear_timer;
     int are_timer;
+
+    MinoType held_piece;
+    bool has_held;
+
 };
 
 // game.c
@@ -123,16 +137,18 @@ void input_right();
 void input_instant_drop();
 void input_rotate_cw();
 void input_rotate_ccw();
+void input_hold();
 
 void release_left();
 void release_right();
 
 void game_init();
+const Point* get_piece_minos();
 bool update();
 
 // draw.c
 void init_font();
-void draw_mino(int cell_x, int cell_y, MinoType type);
+void draw_mino(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9]);
 void draw_text(int x, int y, const char* text);
 void draw_info_value(int row, const char* format, int value);
 void draw_info_text(int row, const char* format, char* text);

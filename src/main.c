@@ -1,14 +1,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_scancode.h>
-#include <SDL2/SDL_timer.h>
-#include <SDL2/SDL_video.h>
-
 #include "../include/main.h"
 
 const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
@@ -17,7 +9,8 @@ const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
     SDL_SCANCODE_DOWN,
     SDL_SCANCODE_UP,
     SDL_SCANCODE_Z,
-    SDL_SCANCODE_X
+    SDL_SCANCODE_X,
+    SDL_SCANCODE_C
 };
 
 GameData state = {0};
@@ -97,6 +90,9 @@ int main(int argc, char* argv[]) {
 
                 } else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CCW]) {
                     input_rotate_ccw();
+                
+                } else if (event.key.keysym.scancode == mapped_keys[Input_Hold]) {
+                    input_hold();
                 }
 
                 break;

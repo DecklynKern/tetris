@@ -1,35 +1,18 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_ttf.h>
-
 #include "../include/main.h"
 
 static TTF_Font* font;
 
-#define RGB(r, g, b) ((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
 #define GET_R(c)  (c >> 24)
 #define GET_G(c)  ((c << 8) >> 24)
 #define GET_B(c) ((c << 16) >> 24)
 #define GET_A(c) ((c << 24) >> 24)
-
-const Uint32 piece_colours[9] = {
-    (Uint32) RGB(  0,   0,   0),
-    (Uint32) RGB(255, 255,   0),
-    (Uint32) RGB(255,   0, 255),
-    (Uint32) RGB(  0, 255,   0),
-    (Uint32) RGB(255, 128,   0),
-    (Uint32) RGB(  0,   0, 255),
-    (Uint32) RGB(  0, 255, 255),
-    (Uint32) RGB(255,   0,   0),
-    (Uint32) RGB(200, 200, 200)
-};
 
 void init_font() {
     TTF_Init();
     font = TTF_OpenFont("AldotheApache.ttf", FONT_SIZE);
 }
 
-void draw_mino(int cell_x, int cell_y, MinoType type) {
+void draw_mino(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9]) {
 
     SDL_Rect rect = {
         .x = cell_x * SCALE,

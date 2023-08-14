@@ -1,12 +1,22 @@
 #include <math.h>
-
-#include <SDL2/SDL.h>
+#include <string.h>
 
 #include "../../include/tgm.h"
-#include "../../include/main.h"
 
 #define HISTORY_LEN 4
 #define NUM_TRIES 4
+
+static const Uint32 piece_colours[9] = {
+    (Uint32)RGB(  0,   0,   0),
+    (Uint32)RGB(255, 255,   0),
+    (Uint32)RGB(255,   0, 255),
+    (Uint32)RGB(  0, 255,   0),
+    (Uint32)RGB(255, 128,   0),
+    (Uint32)RGB(  0,   0, 255),
+    (Uint32)RGB(  0, 255, 255),
+    (Uint32)RGB(255,   0,   0),
+    (Uint32)RGB(200, 200, 200)
+};
 
 static MinoType next_piece;
 static MinoType history[HISTORY_LEN];
@@ -80,7 +90,7 @@ static Point get_kick(Rotation new_rotation, int attempt) {
     }
     no_centre_column:
 
-    return (Point) {attempt == 1 ? -1 : 1, 0};
+    return (Point) {attempt == 1 ? 1 : -1, 0};
 
 }
 
@@ -202,7 +212,7 @@ static void tap_death_on_line_clear(int num_lines) {
 
 }
 
-static MinoType generate_next_piece() {
+static MinoType generate_new_piece() {
 
     MinoType try_piece = rand() % 7 + 1;
 
@@ -279,18 +289,28 @@ static void draw() {
 
     for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
-            draw_mino(x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x]);
+            draw_mino(x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x], piece_colours);
         }
     }
 
     if (!state.line_clear_timer && !state.are_timer) {
         for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-            draw_mino(state.piece.x + state.piece.minos[i].x, state.piece.y + state.piece.minos[i].y - INVISIBLE_ROWS + 5, state.piece.type);
+            draw_mino(
+                state.piece.x + get_piece_minos()[i].x,
+                state.piece.y + get_piece_minos()[i].y - INVISIBLE_ROWS + 5,
+                state.piece.type,
+                piece_colours
+            );
         }
     }
 
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        draw_mino(5 + ars_minos[next_piece][Rot_N][i].x, ars_minos[next_piece][Rot_N][i].y, next_piece);
+        draw_mino(
+            5 + ars_minos[next_piece - 1][Rot_N][i].x,
+            ars_minos[next_piece - 1][Rot_N][i].y,
+            next_piece,
+            piece_colours
+        );
     }
 
     draw_info_text(0, "Grade: %s", grade);
@@ -307,9 +327,11 @@ const Gamemode tgm1_mode = {
     .gravity = 4,
     .gravity_factor = 256,
     .das_delay = 16,
+    .arr_delay = 1,
     .soft_drop_factor = 256,
 
     .can_hold = false,
+    .lock_on_down_held = true,
     .num_kicks = 2,
     .piece_rot_minos = &ars_minos,
 
@@ -317,7 +339,7 @@ const Gamemode tgm1_mode = {
     .get_kick = get_kick,
     .on_lock = on_lock,
     .on_line_clear = tgm1_on_line_clear,
-    .generate_next_piece = generate_next_piece,
+    .generate_new_piece = generate_new_piece,
     .update = tgm_update,
     .draw = draw
 
@@ -329,11 +351,13 @@ const Gamemode tap_master_mode = {
     .are_delay = 27,
     .lock_delay = 30,
     .das_delay = 16,
+    .arr_delay = 1,
     .soft_drop_factor = 256,
     .gravity = 4,
     .gravity_factor = 256,
 
     .can_hold = false,
+    .lock_on_down_held = true,
     .instant_drop_type = SonicDrop,
     .num_kicks = 2,
     .piece_rot_minos = &ars_minos,
@@ -342,7 +366,7 @@ const Gamemode tap_master_mode = {
     .get_kick = get_kick,
     .on_lock = on_lock,
     .on_line_clear = tap_master_on_line_clear,
-    .generate_next_piece = generate_next_piece,
+    .generate_new_piece = generate_new_piece,
     .update = tap_master_update,
     .draw = draw
 
@@ -354,11 +378,13 @@ const Gamemode tap_tgmplus_mode = {
     .are_delay = 27,
     .lock_delay = 30,
     .das_delay = 16,
+    .arr_delay = 1,
     .soft_drop_factor = 256,
     .gravity = 4,
     .gravity_factor = 256,
 
     .can_hold = false,
+    .lock_on_down_held = true,
     .instant_drop_type = SonicDrop,
     .num_kicks = 2,
     .piece_rot_minos = &ars_minos,
@@ -367,7 +393,7 @@ const Gamemode tap_tgmplus_mode = {
     .get_kick = get_kick,
     .on_lock = tap_tgmplus_on_lock,
     .on_line_clear = tgm_on_line_clear,
-    .generate_next_piece = generate_next_piece,
+    .generate_new_piece = generate_new_piece,
     .draw = draw
 
 };
@@ -378,11 +404,13 @@ const Gamemode tap_death_mode = {
     .are_delay = 18,
     .lock_delay = 30,
     .das_delay = 12,
+    .arr_delay = 1,
     .soft_drop_factor = 0,
     .gravity = 5120,
     .gravity_factor = 256,
 
     .can_hold = false,
+    .lock_on_down_held = true,
     .num_kicks = 2,
     .piece_rot_minos = &ars_minos,
 
@@ -390,7 +418,7 @@ const Gamemode tap_death_mode = {
     .get_kick = get_kick,
     .on_lock = on_lock,
     .on_line_clear = tap_death_on_line_clear,
-    .generate_next_piece = generate_next_piece,
+    .generate_new_piece = generate_new_piece,
     .update = tgm_update,
     .draw = draw
 

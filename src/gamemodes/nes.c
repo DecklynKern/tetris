@@ -1,8 +1,18 @@
-#include <SDL2/SDL.h>
-
 #include "../../include/main.h"
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+static const Uint32 piece_colours[9] = {
+    (Uint32)RGB(  0,   0,   0),
+    (Uint32)RGB(128, 128, 128),
+    (Uint32)RGB(128, 128, 128),
+    (Uint32)RGB(128, 128, 128),
+    (Uint32)RGB(128, 128, 128),
+    (Uint32)RGB(128, 128, 128),
+    (Uint32)RGB(128, 128, 128),
+    (Uint32)RGB(128, 128, 128),
+    (Uint32)RGB(200, 200, 200)
+};
 
 static const Point nrs_minos[7][4][PIECE_MINO_COUNT] = {
     {   // O
@@ -10,38 +20,32 @@ static const Point nrs_minos[7][4][PIECE_MINO_COUNT] = {
         {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
         {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
         {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}}
-    },
-    {   // S
+    }, { // S
         {{ 0,  0}, { 1,  0}, {-1,  1}, { 0,  1}},
         {{ 0, -1}, { 0,  0}, { 1,  0}, { 1,  1}},
         {{ 0,  0}, { 1,  0}, {-1,  1}, { 0,  1}},
         {{ 0, -1}, { 0,  0}, { 1,  0}, { 1,  1}}
-    },
-    {   // Z
+    }, { // Z
         {{-1,  0}, { 0,  0}, { 0,  1}, { 1,  1}},
         {{ 1, -1}, { 0,  0}, { 1,  0}, { 0,  1}},
         {{-1,  0}, { 0,  0}, { 0,  1}, { 1,  1}},
         {{ 1, -1}, { 0,  0}, { 1,  0}, { 0,  1}}
-    },
-    {   // L
+    }, { // L
         {{-1,  0}, { 0,  0}, { 1,  0}, {-1,  1}},
         {{ 0, -1}, { 0,  0}, { 0,  1}, { 1,  1}},
         {{ 1,  0}, {-1,  1}, { 0,  1}, { 1,  1}},
         {{-1, -1}, { 0, -1}, { 0,  0}, { 0,  1}}
-    },
-    {   // J
+    }, { // J
         {{-1,  0}, { 0,  0}, { 1,  0}, { 1,  1}},
         {{ 0, -1}, { 1, -1}, { 0,  0}, { 0,  1}},
         {{-1,  0}, {-1,  1}, { 0,  1}, { 1,  1}},
         {{ 0, -1}, { 0,  0}, {-1,  1}, { 0,  1}}
-    },
-    {   // T
+    }, { // T
         {{-1,  0}, { 0,  0}, { 1,  0}, { 0,  1}},
         {{ 0, -1}, { 0,  0}, { 1,  0}, { 0,  1}},
         {{ 0,  0}, {-1,  1}, { 0,  1}, { 1,  1}},
         {{ 0, -1}, {-1,  0}, { 0,  0}, { 0,  1}}
-    },
-    {   // I
+    }, { // I
         {{-1,  1}, { 0,  1}, { 1,  1}, { 2,  1}},
         {{ 1, -1}, { 1,  0}, { 1,  1}, { 1,  2}},
         {{-1,  1}, { 0,  1}, { 1,  1}, { 2,  1}},
@@ -149,18 +153,28 @@ static void draw() {
 
     for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
-            draw_mino(x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x]);
+            draw_mino(x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x], piece_colours);
         }
     }
 
     if (!state.line_clear_timer && !state.are_timer) {
         for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-            draw_mino(state.piece.x + state.piece.minos[i].x, state.piece.y + state.piece.minos[i].y - INVISIBLE_ROWS + 5, state.piece.type);
+            draw_mino(
+                state.piece.x + get_piece_minos()[i].x,
+                state.piece.y + get_piece_minos()[i].y - INVISIBLE_ROWS + 5,
+                state.piece.type,
+                piece_colours
+            );
         }
     }
 
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        draw_mino(5 + nrs_minos[next_piece][Rot_N][i].x, nrs_minos[next_piece][Rot_N][i].y, next_piece);
+        draw_mino(
+            5 + nrs_minos[next_piece - 1][Rot_N][i].x,
+            nrs_minos[next_piece - 1][Rot_N][i].y,
+            next_piece,
+            piece_colours
+        );
     }
 
     draw_info_value(0, "Level: %d", level);
@@ -173,9 +187,11 @@ const Gamemode nes_mode = {
 
     .line_clear_delay = 18, // 17-20 depending on internal frame counter???
     .are_delay = 10, // 10-18 depending on height at lock
-    .gravity = 1,
     .lock_delay = 0,
     .das_delay = 16,
+    .arr_delay = 4,
+    .soft_drop_factor = 256,
+    .gravity = 1,
 
     .can_hold = false,
     .num_kicks = 0,
@@ -183,7 +199,7 @@ const Gamemode nes_mode = {
 
     .init = init,
     .on_line_clear = on_line_clear,
-    .generate_next_piece = new_piece,
+    .generate_new_piece = new_piece,
     .draw = draw
 
 };
