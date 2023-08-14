@@ -2,33 +2,41 @@
 
 #include "../../include/gamemodes.h"
 
+#define NUM_GAMEMODES 6
+static const struct {
+    char* code;
+    const Gamemode* mode;
+} gamemodes[NUM_GAMEMODES] = {
+    {"nes", &nes_mode},
+    {"tgm1", &tgm1_mode},
+    {"tap-master", &tap_master_mode},
+    {"tap-tgm+", &tap_tgmplus_mode},
+    {"tap-death", &tap_death_mode},
+    {"modern", &modern_mode},
+};
+
 bool load_gamemode(int argc, char* argv[]) {
 
-    const Gamemode* mode = NULL;
-    
-    if (!strcmp(argv[1], "nes")) {
-        mode = &nes_mode;
+    if (!strcmp(argv[1], "list")) {
+        
+        printf("Available modes:\n");
+        
+        for (int i = 0; i < NUM_GAMEMODES; i++) {
+            printf("%s\n", gamemodes[i].code);
+        }
 
-    } else if (!strcmp(argv[1], "tgm1")) {
-        mode = &tgm1_mode;
+        return false;
 
-    } else if (!strcmp(argv[1], "tap-master")) {
-        mode = &tap_master_mode;
-
-    } else if (!strcmp(argv[1], "tap-tgm+")) {
-        mode = &tap_tgmplus_mode;
-
-    } else if (!strcmp(argv[1], "tap-death")) {
-        mode = &tap_death_mode;
-    
-    }else if (!strcmp(argv[1], "modern")) {
-        mode = &modern_mode;
     }
 
-    if (mode) {
-        memcpy(&state.gamemode, mode, sizeof(Gamemode));
+    for (int i = 0; i < NUM_GAMEMODES; i++) {
+        if (!strcmp(argv[1], gamemodes[i].code)) {
+            memcpy(&state.gamemode, gamemodes[i].mode, sizeof(Gamemode));
+            return true;
+        }
     }
 
-    return mode != NULL;
+    printf("Invalid gamemode, use './tetrism list' to see all supported modes.\n");
+    return false;
 
 }

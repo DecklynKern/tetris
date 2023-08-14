@@ -128,9 +128,9 @@ static void reset_position() {
 
 
 static void new_piece() {
+    reset_position();
     state.piece.type = (*state.gamemode.generate_new_piece)();
     state.has_held = false;
-    reset_position();
 }
 
 void input_left() {

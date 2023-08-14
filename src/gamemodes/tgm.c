@@ -199,6 +199,16 @@ static void tap_master_on_line_clear(int num_lines) {
     }
 }
 
+static void tap_tgmplus_on_line_clear(int num_lines) {
+
+    tgm_on_line_clear(num_lines);
+
+    int i;
+    for (i = 1; i < TGM1_NUM_GRAVITY_LEVELS && tgm1_gravity_table[i].level <= level; i++);
+    state.gamemode.gravity = tgm1_gravity_table[i - 1].gravity;
+
+}
+
 static void tap_death_on_line_clear(int num_lines) {
 
     tgm_on_line_clear(num_lines);
@@ -392,7 +402,7 @@ const Gamemode tap_tgmplus_mode = {
     .init = tap_init,
     .get_kick = get_kick,
     .on_lock = tap_tgmplus_on_lock,
-    .on_line_clear = tgm_on_line_clear,
+    .on_line_clear = tap_tgmplus_on_line_clear,
     .generate_new_piece = generate_new_piece,
     .draw = draw
 

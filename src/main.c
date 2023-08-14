@@ -24,7 +24,6 @@ int main(int argc, char* argv[]) {
     }
 
     if (!load_gamemode(argc, argv)) {
-        printf("Invalid gamemode, use './tetrism list' to see all supported modes.\n");
         return 0;
     }
 
