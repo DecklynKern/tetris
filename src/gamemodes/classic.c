@@ -14,7 +14,7 @@ static const Uint32 piece_colours[9] = {
     (Uint32)RGB(200, 200, 200)
 };
 
-static const Point nrs_minos[7][4][PIECE_MINO_COUNT] = {
+static const Point nrs_right_handed_minos[7][4][PIECE_MINO_COUNT] = {
     {   // O
         {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
         {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
@@ -49,6 +49,45 @@ static const Point nrs_minos[7][4][PIECE_MINO_COUNT] = {
         {{-1,  1}, { 0,  1}, { 1,  1}, { 2,  1}},
         {{ 1, -1}, { 1,  0}, { 1,  1}, { 1,  2}},
         {{-1,  1}, { 0,  1}, { 1,  1}, { 2,  1}},
+        {{ 1, -1}, { 1,  0}, { 1,  1}, { 1,  2}}
+    }
+};
+
+static const Point nrs_left_handed_minos[7][4][PIECE_MINO_COUNT] = {
+    {   // O
+        {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
+        {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
+        {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}},
+        {{ 0,  0}, { 1,  0}, { 0,  1}, { 1,  1}}
+    }, { // S
+        {{ 0,  0}, { 1,  0}, {-1,  1}, { 0,  1}},
+        {{-1, -1}, {-1,  0}, { 0,  0}, { 0,  1}},
+        {{ 0,  0}, { 1,  0}, {-1,  1}, { 0,  1}},
+        {{-1, -1}, {-1,  0}, { 0,  0}, { 0,  1}}
+    }, { // Z
+        {{-1,  0}, { 0,  0}, { 0,  1}, { 1,  1}},
+        {{ 0, -1}, {-1,  0}, { 0,  0}, {-1,  1}},
+        {{-1,  0}, { 0,  0}, { 0,  1}, { 1,  1}},
+        {{ 0, -1}, {-1,  0}, { 0,  0}, {-1,  1}}
+    }, { // L
+        {{-1,  0}, { 0,  0}, { 1,  0}, {-1,  1}},
+        {{ 0, -1}, { 0,  0}, { 0,  1}, { 1,  1}},
+        {{ 1,  0}, {-1,  1}, { 0,  1}, { 1,  1}},
+        {{-1, -1}, { 0, -1}, { 0,  0}, { 0,  1}}
+    }, { // J
+        {{-1,  0}, { 0,  0}, { 1,  0}, { 1,  1}},
+        {{ 0, -1}, { 1, -1}, { 0,  0}, { 0,  1}},
+        {{-1,  0}, {-1,  1}, { 0,  1}, { 1,  1}},
+        {{ 0, -1}, { 0,  0}, {-1,  1}, { 0,  1}}
+    }, { // T
+        {{-1,  0}, { 0,  0}, { 1,  0}, { 0,  1}},
+        {{ 0, -1}, { 0,  0}, { 1,  0}, { 0,  1}},
+        {{ 0,  0}, {-1,  1}, { 0,  1}, { 1,  1}},
+        {{ 0, -1}, {-1,  0}, { 0,  0}, { 0,  1}}
+    }, { // I
+        {{-1,  0}, { 0,  0}, { 1,  0}, { 2,  0}},
+        {{ 1, -1}, { 1,  0}, { 1,  1}, { 1,  2}},
+        {{-1,  0}, { 0,  0}, { 1,  0}, { 2,  0}},
         {{ 1, -1}, { 1,  0}, { 1,  1}, { 1,  2}}
     }
 };
@@ -170,8 +209,8 @@ static void draw() {
 
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
         draw_mino(
-            5 + nrs_minos[next_piece - 1][Rot_N][i].x,
-            nrs_minos[next_piece - 1][Rot_N][i].y,
+            5 + nrs_right_handed_minos[next_piece - 1][Rot_N][i].x,
+            nrs_right_handed_minos[next_piece - 1][Rot_N][i].y,
             next_piece,
             piece_colours
         );
@@ -189,13 +228,12 @@ const Gamemode nes_mode = {
     .are_delay = 10, // 10-18 depending on height at lock
     .lock_delay = 0,
     .das_delay = 16,
-    .arr_delay = 4,
-    .soft_drop_factor = 256,
+    .arr_delay = 6,
     .gravity = 1,
 
     .can_hold = false,
     .num_kicks = 0,
-    .piece_rot_minos = &nrs_minos,
+    .piece_rot_minos = &nrs_right_handed_minos,
 
     .init = init,
     .on_line_clear = on_line_clear,
@@ -203,3 +241,24 @@ const Gamemode nes_mode = {
     .draw = draw
 
 };
+
+// unfinished
+// const Gamemode gba_mode = {
+
+//     .line_clear_delay = 91,
+//     .are_delay = 2,
+//     .lock_delay = 0,
+//     .das_delay = 23,
+//     .arr_delay = 9,
+//     .gravity = 1,
+
+//     .can_hold = false,
+//     .num_kicks = 0,
+//     .piece_rot_minos = &nrs_left_handed_minos,
+
+//     .init = init,
+//     .on_line_clear = on_line_clear,
+//     .generate_new_piece = new_piece,
+//     .draw = draw
+
+// };

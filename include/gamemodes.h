@@ -1,6 +1,6 @@
 #include "main.h"
 
-// nes.c
+// classic.c
 extern const Gamemode nes_mode;
 
 // tgm.c

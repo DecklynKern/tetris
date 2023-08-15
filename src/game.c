@@ -76,18 +76,18 @@ static void lock_piece() {
     }
 }
 
-static int try_move(int dx, int dy) {
+static bool try_move(int dx, int dy) {
 
     if (placement_valid(get_piece_minos(), state.piece.x + dx, state.piece.y + dy)) {
 
         state.piece.x += dx;
         state.piece.y += dy;
 
-        return 1;
+        return true;
 
     }
 
-    return 0;
+    return false;
 
 }
 
@@ -257,11 +257,11 @@ bool update() {
     if (state.are_timer) {
 
         state.are_timer--;
-    
+
         if (!state.are_timer) {
 
             new_piece();
-        
+
             if (!placement_valid(get_piece_minos(), state.piece.x, state.piece.y)) {
                 return true;
             }

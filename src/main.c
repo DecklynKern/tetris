@@ -1,5 +1,11 @@
 #include <stdio.h>
 #include <time.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#define SDL_FLAGS SDL_INIT_EVERYTHING & ~(SDL_INIT_TIMER | SDL_INIT_HAPTIC | SDL_INIT_AUDIO)
+#else
+#define SDL_FLAGS SDL_INIT_EVERYTHING
+#endif
 
 #include "../include/main.h"
 
@@ -18,6 +24,11 @@ SDL_Renderer* renderer;
 
 int main(int argc, char* argv[]) {
 
+    #ifdef __EMSCRIPTEN__
+    argc = 2;
+    argv[1] = "tgm1";
+    #endif
+
     if (argc == 1) {
         printf("Please enter a gamemode, use './tetrism list' to see all supported modes.\n");
         return 0;
@@ -29,7 +40,7 @@ int main(int argc, char* argv[]) {
 
     srand(time(NULL));
 
-    if (SDL_Init(SDL_INIT_EVERYTHING)) {
+    if (SDL_Init(SDL_FLAGS)) {
         printf("sdl bruh: %s\n", SDL_GetError());
     }
 
