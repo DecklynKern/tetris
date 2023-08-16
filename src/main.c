@@ -23,11 +23,12 @@ const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
 GameData state = {0};
 SDL_Renderer* renderer;
 
-static bool pause = false;
+static bool pause = true;
 static bool close = false;
 static const Uint8* key_state;
+static clock_t start_time;
 
-void tick() {
+void tick(void) {
 
     SDL_Event event;
 
@@ -81,7 +82,6 @@ void tick() {
 
             } else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
                 release_right();
-            
             }
         }
     }
@@ -89,6 +89,8 @@ void tick() {
     for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
         state.input_held[key] = key_state[mapped_keys[key]];
     }
+
+    state.timer_ms = ((clock() - start_time) * 1000) / CLOCKS_PER_SEC;
 
     if (!pause) {
         close |= update();
@@ -98,6 +100,11 @@ void tick() {
     SDL_RenderClear(renderer);
 
     state.gamemode.draw();
+
+    if (pause) {
+        draw_large_text(SCALE * 3, TOP_SPACE_HEIGHT + SCALE * 8, "PAUSED");
+        draw_large_text(SCALE * 2.4, TOP_SPACE_HEIGHT + SCALE * 9, "[Press ESC]");
+    }
 
     SDL_RenderPresent(renderer);
 
@@ -132,15 +139,18 @@ int main(int argc, char* argv[]) {
         "Tetris!",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        BOARD_WIDTH * SCALE + 5 * SCALE,
-        (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + 5 * SCALE,
+        BOARD_WIDTH * SCALE + TOP_SPACE_HEIGHT,
+        (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + RIGHT_SPACE_WIDTH,
         0
     );
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     key_state = SDL_GetKeyboardState(NULL);
 
-    init_font();
+    init_fonts();
+
+    start_time = clock();
+
     #ifdef __EMSCRIPTEN__
         emscripten_set_main_loop(tick, 60, false);
 

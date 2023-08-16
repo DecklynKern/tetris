@@ -37,7 +37,7 @@ static int internal_score = 0;
 static int tgmplus_garbage_counter = 0;
 static int tgmplus_garbage_row = 0;
 
-static void tgm1_init() {
+static void tgm1_init(void) {
 
     history[0] = history[1] = history[2] = history[3] = Z;
 
@@ -48,7 +48,7 @@ static void tgm1_init() {
 
 }
 
-static void tap_init() {
+static void tap_init(void) {
 
     history[0] = history[3] = Z;
     history[1] = history[2] = S;
@@ -60,7 +60,7 @@ static void tap_init() {
 
 }
 
-static void tap_master_init() {
+static void tap_master_init(void) {
     tap_init();
     grade = "9";
 }
@@ -222,7 +222,7 @@ static void tap_death_on_line_clear(int num_lines) {
 
 }
 
-static MinoType generate_new_piece() {
+static MinoType generate_new_piece(void) {
 
     MinoType try_piece = rand() % 7 + 1;
 
@@ -252,16 +252,6 @@ static MinoType generate_new_piece() {
 
     history[0] = try_piece;
 
-    if (state.input_held[Input_Rot_CCW]) {
-        state.piece.rotation = Rot_W;
-
-    } else if (state.input_held[Input_Rot_CW]) {
-        state.piece.rotation = Rot_E;
-        
-    } else {
-        state.piece.rotation = Rot_N;
-    }
-
     MinoType new_piece_type = next_piece;
     next_piece = try_piece;
 
@@ -269,14 +259,14 @@ static MinoType generate_new_piece() {
 
 }
 
-static void tgm_update() {
+static void tgm_update(void) {
 
     if (state.input_held[Input_Down]) {
         soft++;
     }
 }
 
-static void tap_master_update() {
+static void tap_master_update(void) {
 
     tgm_update();
 
@@ -295,7 +285,7 @@ static void tap_master_update() {
     }
 }
 
-static void draw() {
+static void draw(void) {
 
     for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
@@ -326,110 +316,98 @@ static void draw() {
     draw_info_text(0, "Grade: %s", grade);
     draw_info_value(1, "Score: %d", score);
     draw_info_value(2, "Level: %d", level);
-
+    draw_info_timer(3);
 }
 
+#define TGM_SETTINGS \
+    .gravity_factor = 256,\
+    .arr_delay = 1,\
+    .soft_drop_factor = 256,\
+    \
+    .can_hold = false,\
+    .lock_on_down_held = true,\
+    .irs = true,\
+    .num_kicks = 2,\
+    .piece_rot_minos = &ars_minos,\
+    \
+    .draw = draw,\
+
+#define TAP_SETTINGS \
+    TGM_SETTINGS\
+    \
+    .instant_drop_type = SonicDrop,\
+    \
+    .get_kick = get_kick,\
+    .generate_new_piece = generate_new_piece,\
+
 const Gamemode tgm1_mode = {
+
+    TGM_SETTINGS
 
     .line_clear_delay = 41,
     .are_delay = 30,
     .lock_delay = 30,
     .gravity = 4,
-    .gravity_factor = 256,
     .das_delay = 16,
-    .arr_delay = 1,
-    .soft_drop_factor = 256,
 
-    .can_hold = false,
-    .lock_on_down_held = true,
-    .num_kicks = 2,
-    .piece_rot_minos = &ars_minos,
+    .instant_drop_type = NoInstantDrop,
 
     .init = tgm1_init,
     .get_kick = get_kick,
     .on_lock = on_lock,
     .on_line_clear = tgm1_on_line_clear,
     .generate_new_piece = generate_new_piece,
-    .update = tgm_update,
-    .draw = draw
+    .update = tgm_update
 
 };
 
 const Gamemode tap_master_mode = {
 
+    TAP_SETTINGS
+
     .line_clear_delay = 40,
     .are_delay = 27,
     .lock_delay = 30,
     .das_delay = 16,
-    .arr_delay = 1,
-    .soft_drop_factor = 256,
     .gravity = 4,
-    .gravity_factor = 256,
-
-    .can_hold = false,
-    .lock_on_down_held = true,
-    .instant_drop_type = SonicDrop,
-    .num_kicks = 2,
-    .piece_rot_minos = &ars_minos,
 
     .init = tap_master_init,
-    .get_kick = get_kick,
     .on_lock = on_lock,
     .on_line_clear = tap_master_on_line_clear,
-    .generate_new_piece = generate_new_piece,
-    .update = tap_master_update,
-    .draw = draw
+    .update = tap_master_update
 
 };
 
 const Gamemode tap_tgmplus_mode = {
 
+    TAP_SETTINGS
+
     .line_clear_delay = 40,
     .are_delay = 27,
     .lock_delay = 30,
     .das_delay = 16,
-    .arr_delay = 1,
-    .soft_drop_factor = 256,
     .gravity = 4,
-    .gravity_factor = 256,
-
-    .can_hold = false,
-    .lock_on_down_held = true,
-    .instant_drop_type = SonicDrop,
-    .num_kicks = 2,
-    .piece_rot_minos = &ars_minos,
 
     .init = tap_init,
-    .get_kick = get_kick,
     .on_lock = tap_tgmplus_on_lock,
     .on_line_clear = tap_tgmplus_on_line_clear,
-    .generate_new_piece = generate_new_piece,
-    .draw = draw
+    .update = tgm_update
 
 };
 
 const Gamemode tap_death_mode = {
 
+    TAP_SETTINGS
+
     .line_clear_delay = 8,
     .are_delay = 18,
     .lock_delay = 30,
     .das_delay = 12,
-    .arr_delay = 1,
-    .soft_drop_factor = 0,
     .gravity = 5120,
-    .gravity_factor = 256,
-
-    .can_hold = false,
-    .lock_on_down_held = true,
-    .num_kicks = 2,
-    .piece_rot_minos = &ars_minos,
 
     .init = tap_init,
-    .get_kick = get_kick,
     .on_lock = on_lock,
     .on_line_clear = tap_death_on_line_clear,
-    .generate_new_piece = generate_new_piece,
-    .update = tgm_update,
-    .draw = draw
+    .update = tgm_update
 
 };

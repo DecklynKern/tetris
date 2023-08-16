@@ -1,24 +1,36 @@
 #include "../include/main.h"
+#include <SDL2/SDL_ttf.h>
+#include <stdio.h>
 
-static TTF_Font* font;
+#define FONT_PATH "font/AldotheApache.ttf"
+
+#define SMALL_FONT_SIZE 16
+#define LARGE_FONT_SIZE 32
+
+static TTF_Font* small_font;
+static TTF_Font* large_font;
 
 #define GET_R(c)  (c >> 24)
 #define GET_G(c)  ((c << 8) >> 24)
 #define GET_B(c) ((c << 16) >> 24)
 #define GET_A(c) ((c << 24) >> 24)
 
-void init_font() {
+void init_fonts(void) {
+    
     TTF_Init();
-    font = TTF_OpenFont("AldotheApache.ttf", FONT_SIZE);
+
+    small_font = TTF_OpenFont(FONT_PATH, SMALL_FONT_SIZE);
+    large_font = TTF_OpenFont(FONT_PATH, LARGE_FONT_SIZE);
+
 }
 
-void draw_mino(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9]) {
+void draw_mino_scaled(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9], int scale) {
 
     SDL_Rect rect = {
-        .x = cell_x * SCALE,
-        .y = cell_y * SCALE,
-        .w = SCALE,
-        .h = SCALE
+        .x = cell_x * scale,
+        .y = cell_y * scale,
+        .w = scale,
+        .h = scale
     };
 
     Uint32 colour = piece_colours[type];
@@ -28,7 +40,11 @@ void draw_mino(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours
 
 }
 
-void draw_text(int x, int y, const char* text) {
+void draw_mino(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9]) {
+    draw_mino_scaled(cell_x, cell_y, type, piece_colours, SCALE);
+}
+
+void draw_text(int x, int y, const char* text, TTF_Font* font) {
 
     SDL_Colour white = {255, 255, 255};
     SDL_Surface* surface = TTF_RenderText_Solid(font, text, white);
@@ -49,14 +65,28 @@ void draw_text(int x, int y, const char* text) {
 
 }
 
+void draw_small_text(int x, int y, const char* text) {
+    draw_text(x, y, text, small_font);
+}
+
+void draw_large_text(int x, int y, const char* text) {
+    draw_text(x, y, text, large_font);
+}
+
 void draw_info_value(int row, const char* format, int value) {
     char text[20];
     sprintf(text, format, value);
-    draw_text(BOARD_WIDTH * SCALE, 100 + row * 15, text);
+    draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, text);
 }
 
 void draw_info_text(int row, const char* format, char* text) {
     char final_text[20];
     sprintf(final_text, format, text);
-    draw_text(BOARD_WIDTH * SCALE, 100 + row * 15, final_text);
+    draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, final_text);
+}
+
+void draw_info_timer(int row) {
+    char text[30];
+    sprintf(text, "%02ld:%02ld.%03ld", state.timer_ms / 60000, state.timer_ms / 1000 % 60, state.timer_ms % 1000);
+    draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, text);
 }

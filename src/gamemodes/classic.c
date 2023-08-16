@@ -134,7 +134,7 @@ static const int gravity_factor_table[NUM_LEVELS] = {
     1
 };
 
-static void init() {
+static void init(void) {
     next_piece = rand() % 7 + 1;
     state.gamemode.gravity_factor = gravity_factor_table[level];
     state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
@@ -179,7 +179,7 @@ static void on_line_clear(int num_lines) {
     }
 }
 
-static MinoType new_piece() {
+static MinoType new_piece(void) {
 
     MinoType new_piece_type = next_piece;
     next_piece = rand() % 7 + 1;
@@ -188,7 +188,7 @@ static MinoType new_piece() {
 
 }
 
-static void draw() {
+static void draw(void) {
 
     for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
@@ -232,6 +232,9 @@ const Gamemode nes_mode = {
     .gravity = 1,
 
     .can_hold = false,
+    .lock_on_down_held = false,
+    .irs = false,
+    .instant_drop_type = NoInstantDrop,
     .num_kicks = 0,
     .piece_rot_minos = &nrs_right_handed_minos,
 

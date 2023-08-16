@@ -23,7 +23,11 @@ static bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) 
 
 }
 
-static void lock_piece() {
+static bool current_placement_valid() {
+    return placement_valid(get_piece_minos(), state.piece.x, state.piece.y);
+}
+
+static void lock_piece(void) {
 
     int lines_cleared = 0;
 
@@ -116,7 +120,7 @@ static void try_rotate(int rotation_amount) {
 
 }
 
-static void reset_position() {
+static void reset_position(void) {
 
     state.piece.x = 4;
     state.piece.y = INVISIBLE_ROWS;
@@ -127,13 +131,32 @@ static void reset_position() {
 }
 
 
-static void new_piece() {
+static void new_piece(void) {
+
     reset_position();
+
     state.piece.type = (*state.gamemode.generate_new_piece)();
     state.has_held = false;
+
+    if (state.gamemode.irs) {
+
+        if (state.input_held[Input_Rot_CCW]) {
+            state.piece.rotation = Rot_W;
+
+        } else if (state.input_held[Input_Rot_CW]) {
+            state.piece.rotation = Rot_E;
+            
+        } else {
+            state.piece.rotation = Rot_N;
+        }
+
+        if (!current_placement_valid()) {
+            state.piece.rotation = Rot_N;
+        }
+    }
 }
 
-void input_left() {
+void input_left(void) {
 
     if (!state.line_clear_timer && !state.are_timer) {
         try_move(-1, 0);
@@ -144,7 +167,7 @@ void input_left() {
 
 }
 
-void input_right() {
+void input_right(void) {
 
     if (!state.line_clear_timer && !state.are_timer) {
         try_move(1, 0);
@@ -155,11 +178,11 @@ void input_right() {
 
 }
 
-void input_down() {
+void input_down(void) {
     state.movement.down_held = true;
 }
 
-void input_instant_drop() {
+void input_instant_drop(void) {
 
     if (state.gamemode.instant_drop_type == NoInstantDrop) {
         return;
@@ -174,19 +197,19 @@ void input_instant_drop() {
     }
 }
 
-void input_rotate_cw() {
+void input_rotate_cw(void) {
     if (!state.line_clear_timer && !state.are_timer) {
         try_rotate(1);
     }
 }
 
-void input_rotate_ccw() {
+void input_rotate_ccw(void) {
     if (!state.line_clear_timer && !state.are_timer) {
         try_rotate(-1);
     }
 }
 
-void input_hold() {
+void input_hold(void) {
 
     if (!state.gamemode.can_hold || state.has_held) {
         return;
@@ -209,27 +232,27 @@ void input_hold() {
 
 }
 
-void release_left() {
+void release_left(void) {
     state.movement.das_timer = 0;
 }
 
-void release_right() {
+void release_right(void) {
     state.movement.das_timer = 0;
 }
 
-void release_down() {
+void release_down(void) {
     state.movement.down_held = false;
 }
 
-void game_init() {
+void game_init(void) {
     new_piece();
 }
 
-const Point* get_piece_minos() {
+const Point* get_piece_minos(void) {
     return (const Point*)&(*state.gamemode.piece_rot_minos)[state.piece.type - 1][state.piece.rotation];
 }
 
-bool update() {
+bool update(void) {
 
     // technically missing das change restrictions in tgm
     if (state.movement.das_timer) {
@@ -262,7 +285,7 @@ bool update() {
 
             new_piece();
 
-            if (!placement_valid(get_piece_minos(), state.piece.x, state.piece.y)) {
+            if (!current_placement_valid()) {
                 return true;
             }
         }

@@ -19,11 +19,12 @@
 #define ROW_BYTES BOARD_WIDTH * sizeof(MinoType)
 #define MAX_KICKS 5
 
+#define TOP_SPACE_HEIGHT 150
+#define RIGHT_SPACE_WIDTH 150
+
 #define PIECE_MINO_COUNT 4
 
 #define RGB(r, g, b) ((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
-
-#define FONT_SIZE 16
 
 typedef enum {
     Input_Left = 0,
@@ -100,17 +101,18 @@ typedef struct {
 
     const bool can_hold;
     const bool lock_on_down_held;
+    const bool irs;
     const InstantDropType instant_drop_type;
     const int num_kicks;
     const Point (*const piece_rot_minos)[7][4][PIECE_MINO_COUNT];
     
-    void (*const init)();
+    void (*const init)(void);
     Point (*const get_kick)(Rotation new_rotation, int attempt);
     void (*const on_lock)(bool cleared_lines);
     void (*const on_line_clear)(int num_lines);
-    MinoType (*const generate_new_piece)();
-    void (*const update)();
-    void (*const draw)();
+    MinoType (*const generate_new_piece)(void);
+    void (*const update)(void);
+    void (*const draw)(void);
 
 } Gamemode;
 
@@ -123,6 +125,8 @@ struct tagGameData {
 
     bool input_held[NUM_HOLDABLE_KEYS];
 
+    long timer_ms;
+
     int line_clear_timer;
     int are_timer;
 
@@ -132,26 +136,29 @@ struct tagGameData {
 };
 
 // game.c
-void input_left();
-void input_right();
-void input_instant_drop();
-void input_rotate_cw();
-void input_rotate_ccw();
-void input_hold();
+void input_left(void);
+void input_right(void);
+void input_instant_drop(void);
+void input_rotate_cw(void);
+void input_rotate_ccw(void);
+void input_hold(void);
 
-void release_left();
-void release_right();
+void release_left(void);
+void release_right(void);
 
-void game_init();
-const Point* get_piece_minos();
-bool update();
+void game_init(void);
+const Point* get_piece_minos(void);
+bool update(void);
 
 // draw.c
-void init_font();
+void init_fonts();
+void draw_mino_scaled(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9], int scale);
 void draw_mino(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9]);
-void draw_text(int x, int y, const char* text);
+void draw_small_text(int x, int y, const char* text);
+void draw_large_text(int x, int y, const char* text);
 void draw_info_value(int row, const char* format, int value);
 void draw_info_text(int row, const char* format, char* text);
+void draw_info_timer(int row);
 
 // mode.c
 bool load_gamemode(int argc, char* argv[]);

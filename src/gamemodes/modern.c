@@ -103,7 +103,7 @@ static const Point srs_i_kicks[4][4][KICK_TRIES] = {
 
 static MinoType bag[7];
 
-static void new_bag() {
+static void new_bag(void) {
 
     bag[0] = O;
     bag[1] = S;
@@ -125,7 +125,7 @@ static void new_bag() {
     }
 }
 
-static void init() {
+static void init(void) {
     new_bag();
 }
 
@@ -139,10 +139,10 @@ static Point get_kick(Rotation new_rotation, int attempt) {
 
 }
 
-static void on_line_clear() {
+static void on_line_clear(int num_lines) {
 }
 
-static MinoType generate_new_piece() {
+static MinoType generate_new_piece(void) {
 
     MinoType new_piece = bag[0];
 
@@ -163,7 +163,7 @@ static MinoType generate_new_piece() {
 
 }
 
-static void draw() {
+static void draw(void) {
 
     for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
@@ -204,6 +204,8 @@ const Gamemode modern_mode = {
     .gravity_factor = 256,
 
     .can_hold = true,
+    .lock_on_down_held = false,
+    .irs = false,
     .instant_drop_type = HardDrop,
     .num_kicks = 4,
     .piece_rot_minos = &srs_minos,
