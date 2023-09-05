@@ -7,11 +7,25 @@
 static TTF_Font* small_font;
 static TTF_Font* large_font;
 
-#define GET_R(c)  (c >> 24)
-#define GET_G(c)  ((c << 8) >> 24)
-#define GET_B(c) ((c << 16) >> 24)
-#define GET_A(c) ((c << 24) >> 24)
-#define GHOSTIFY(c) RGB(GET_R(c) / 2, GET_G(c) / 2, GET_B(c) / 2)
+static inline Uint8 get_r(Uint32 colour) {
+    return colour >> 24;
+}
+
+static inline Uint8 get_g(Uint32 colour) {
+    return ((colour << 8) >> 24)
+}
+
+static inline Uint8 get_b(Uint32 colour) {
+    return ((colour << 16) >> 24);
+}
+
+static inline Uint8 get_a(Uint32 colour) {
+    return ((colour << 24) >> 24);
+}
+
+static inline Uint32 ghostify(Uint32 colour) {
+    return RGB(get_r(colour) / 2, get_g(colour) / 2, get_b(colour) / 2);
+}
 
 void init_fonts(void) {
     
@@ -31,7 +45,7 @@ void draw_mino_as_colour(int cell_x, int cell_y, int scale, Uint32 colour) {
         .h = scale
     };
 
-    SDL_SetRenderDrawColor(renderer, GET_R(colour), GET_G(colour), GET_B(colour), GET_A(colour));
+    SDL_SetRenderDrawColor(renderer, get_r(colour), get_g(colour), get_b(colour), get_a(colour));
     SDL_RenderFillRect(renderer, &rect);
     
 }
@@ -116,7 +130,7 @@ void draw_board() {
                     state.piece.x + get_piece_minos()[i].x,
                     ghost_y + get_piece_minos()[i].y - INVISIBLE_ROWS + 5,
                     SCALE,
-                    GHOSTIFY((*state.gamemode.piece_colours)[state.piece.type])
+                    ghostify((*state.gamemode.piece_colours)[state.piece.type])
                 );
             }
         }
