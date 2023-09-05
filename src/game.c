@@ -23,7 +23,7 @@ bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
 
 }
 
-static bool current_placement_valid() {
+static bool current_placement_valid(void) {
     return placement_valid(get_piece_minos(), state.piece.x, state.piece.y);
 }
 
@@ -251,7 +251,7 @@ void game_init(void) {
 }
 
 const Point* get_piece_minos(void) {
-    return (const Point*)&(*state.gamemode.piece_rot_minos)[state.piece.type - 1][state.piece.rotation];
+    return (const Point*) &(*state.gamemode.piece_rot_minos)[state.piece.type - 1][state.piece.rotation];
 }
 
 bool update(void) {
