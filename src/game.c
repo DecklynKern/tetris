@@ -3,7 +3,7 @@
 
 #include "../include/main.h"
 
-static bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
+bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
     
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
 

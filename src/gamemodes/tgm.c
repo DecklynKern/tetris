@@ -7,15 +7,15 @@
 #define NUM_TRIES 4
 
 static const Uint32 piece_colours[9] = {
-    (Uint32)RGB(  0,   0,   0),
-    (Uint32)RGB(255, 255,   0),
-    (Uint32)RGB(255,   0, 255),
-    (Uint32)RGB(  0, 255,   0),
-    (Uint32)RGB(255, 128,   0),
-    (Uint32)RGB(  0,   0, 255),
-    (Uint32)RGB(  0, 255, 255),
-    (Uint32)RGB(255,   0,   0),
-    (Uint32)RGB(200, 200, 200)
+    RGB(  0,   0,   0),
+    RGB(255, 255,   0),
+    RGB(255,   0, 255),
+    RGB(  0, 255,   0),
+    RGB(255, 128,   0),
+    RGB(  0,   0, 255),
+    RGB(  0, 255, 255),
+    RGB(255,   0,   0),
+    RGB(200, 200, 200)
 };
 
 static MinoType next_piece;
@@ -149,6 +149,9 @@ static void tgm_on_line_clear(int num_lines) {
 
     level += num_lines;
 
+    if (level > 100) {
+        state.gamemode.show_ghost = false;
+    }
 }
 
 static void tgm1_on_line_clear(int num_lines) {
@@ -161,7 +164,6 @@ static void tgm1_on_line_clear(int num_lines) {
 
     for (i = 1; i < NUM_GRADES && tgm1_grade_table[i].score <= score; i++);
     grade = (char*)tgm1_grade_table[i - 1].name;
-
 }
 
 static void tap_master_on_line_clear(int num_lines) {
@@ -287,36 +289,14 @@ static void tap_master_update(void) {
 
 static void draw(void) {
 
-    for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
-        for (int x = 0; x < BOARD_WIDTH; x++) {
-            draw_mino(x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x], piece_colours);
-        }
-    }
-
-    if (!state.line_clear_timer && !state.are_timer) {
-        for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-            draw_mino(
-                state.piece.x + get_piece_minos()[i].x,
-                state.piece.y + get_piece_minos()[i].y - INVISIBLE_ROWS + 5,
-                state.piece.type,
-                piece_colours
-            );
-        }
-    }
-
-    for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        draw_mino(
-            5 + ars_minos[next_piece - 1][Rot_N][i].x,
-            ars_minos[next_piece - 1][Rot_N][i].y,
-            next_piece,
-            piece_colours
-        );
-    }
+    draw_board();
+    draw_single_next(next_piece);
 
     draw_info_text(0, "Grade: %s", grade);
     draw_info_value(1, "Score: %d", score);
     draw_info_value(2, "Level: %d", level);
     draw_info_timer(3);
+    
 }
 
 #define TGM_SETTINGS \
@@ -324,11 +304,13 @@ static void draw(void) {
     .arr_delay = 1,\
     .soft_drop_factor = 256,\
     \
+    .show_ghost = true,\
     .can_hold = false,\
     .lock_on_down_held = true,\
     .irs = true,\
     .num_kicks = 2,\
     .piece_rot_minos = &ars_minos,\
+    .piece_colours = (Uint32 (*const)[]) &piece_colours,\
     \
     .draw = draw,\
 

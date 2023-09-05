@@ -27,7 +27,7 @@
 
 #define PIECE_MINO_COUNT 4
 
-#define RGB(r, g, b) ((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
+#define RGB(r, g, b) (Uint32)((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
 
 #define NUM_GAMEMODES 6
 extern const char* gamemode_names[NUM_GAMEMODES];
@@ -105,12 +105,14 @@ typedef struct {
     int gravity;
     int gravity_factor;
 
+    bool show_ghost;
     const bool can_hold;
     const bool lock_on_down_held;
     const bool irs;
     const InstantDropType instant_drop_type;
     const int num_kicks;
     const Point (*const piece_rot_minos)[7][4][PIECE_MINO_COUNT];
+    Uint32 (*const piece_colours)[];
     
     void (*const init)(void);
     Point (*const get_kick)(Rotation new_rotation, int attempt);
@@ -142,6 +144,8 @@ struct GameData {
 };
 
 // game.c
+bool placement_valid(const Point* piece_minos, int piece_x, int piece_y);
+
 void input_left(void);
 void input_right(void);
 void input_instant_drop(void);
@@ -158,13 +162,16 @@ bool update(void);
 
 // draw.c
 void init_fonts();
-void draw_mino_scaled(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9], int scale);
-void draw_mino(int cell_x, int cell_y, MinoType type, const Uint32 piece_colours[9]);
+void draw_mino_as_colour(int cell_x, int cell_y, int scale, Uint32 colour);
+void draw_mino_scaled(int cell_x, int cell_y, MinoType type, int scale);
+void draw_mino(int cell_x, int cell_y, MinoType type);
 void draw_small_text(int x, int y, const char* text);
 void draw_large_text(int x, int y, const char* text);
 void draw_info_value(int row, const char* format, int value);
 void draw_info_text(int row, const char* format, char* text);
 void draw_info_timer(int row);
+void draw_board();
+void draw_single_next(MinoType next);
 
 // mode.c
 void load_gamemode(int gamemode);

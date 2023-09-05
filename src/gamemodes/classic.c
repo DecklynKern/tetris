@@ -1,17 +1,18 @@
 #include "../../include/main.h"
+#include <SDL2/SDL_stdinc.h>
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 static const Uint32 piece_colours[9] = {
-    (Uint32)RGB(  0,   0,   0),
-    (Uint32)RGB(128, 128, 128),
-    (Uint32)RGB(128, 128, 128),
-    (Uint32)RGB(128, 128, 128),
-    (Uint32)RGB(128, 128, 128),
-    (Uint32)RGB(128, 128, 128),
-    (Uint32)RGB(128, 128, 128),
-    (Uint32)RGB(128, 128, 128),
-    (Uint32)RGB(200, 200, 200)
+    RGB(  0,   0,   0),
+    RGB(128, 128, 128),
+    RGB(128, 128, 128),
+    RGB(128, 128, 128),
+    RGB(128, 128, 128),
+    RGB(128, 128, 128),
+    RGB(128, 128, 128),
+    RGB(128, 128, 128),
+    RGB(200, 200, 200)
 };
 
 static const Point nrs_right_handed_minos[7][4][PIECE_MINO_COUNT] = {
@@ -190,31 +191,8 @@ static MinoType new_piece(void) {
 
 static void draw(void) {
 
-    for (int y = 0; y < BOARD_HEIGHT - INVISIBLE_ROWS; y++) {
-        for (int x = 0; x < BOARD_WIDTH; x++) {
-            draw_mino(x, y + 5, state.board.minos[y + INVISIBLE_ROWS][x], piece_colours);
-        }
-    }
-
-    if (!state.line_clear_timer && !state.are_timer) {
-        for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-            draw_mino(
-                state.piece.x + get_piece_minos()[i].x,
-                state.piece.y + get_piece_minos()[i].y - INVISIBLE_ROWS + 5,
-                state.piece.type,
-                piece_colours
-            );
-        }
-    }
-
-    for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        draw_mino(
-            5 + nrs_right_handed_minos[next_piece - 1][Rot_N][i].x,
-            nrs_right_handed_minos[next_piece - 1][Rot_N][i].y,
-            next_piece,
-            piece_colours
-        );
-    }
+    draw_board();
+    draw_single_next(next_piece);
 
     draw_info_value(0, "Level: %d", level);
     draw_info_value(1, "Lines: %d", lines);
@@ -231,12 +209,14 @@ const Gamemode nes_mode = {
     .arr_delay = 6,
     .gravity = 1,
 
+    .show_ghost = false,
     .can_hold = false,
     .lock_on_down_held = false,
     .irs = false,
     .instant_drop_type = NoInstantDrop,
     .num_kicks = 0,
     .piece_rot_minos = &nrs_right_handed_minos,
+    .piece_colours = (Uint32 (*const)[]) &piece_colours,
 
     .init = init,
     .on_line_clear = on_line_clear,
