@@ -1,3 +1,4 @@
+#include <SDL2/SDL_scancode.h>
 #include <stdio.h>
 #include <time.h>
 #ifdef __EMSCRIPTEN__
@@ -20,11 +21,18 @@ const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
     SDL_SCANCODE_C
 };
 
+typedef enum {
+    MainMenu,
+    InGame,
+    Paused,
+    Closing
+} MenuState;
+
 GameData state = {0};
 SDL_Renderer* renderer;
 
-static bool pause = true;
-static bool close = false;
+static MenuState menu_state = MainMenu;
+static int selected_gamemode = 0;
 static const Uint8* key_state;
 static clock_t start_time;
 
@@ -36,36 +44,70 @@ void tick(void) {
         switch (event.type) {
 
         case SDL_QUIT:
-            close = true;
+            menu_state = Closing;
             break;
 
         case SDL_KEYDOWN:
 
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-                pause = !pause;
+                
+                if (menu_state == InGame) {
+                    menu_state = Paused;
+                }
+                else if (menu_state == Paused) {
+                    menu_state = InGame;
+                }
+
                 continue;
+
             }
 
-            if (pause || event.key.repeat) {
+            if (menu_state == MainMenu) {
+
+                if (
+                    event.key.keysym.scancode == SDL_SCANCODE_DOWN &&
+                    selected_gamemode < NUM_GAMEMODES - 1
+                ) {
+                    selected_gamemode++;
+                }
+                else if (
+                    event.key.keysym.scancode == SDL_SCANCODE_UP &&
+                    selected_gamemode > 0
+                ) {
+                    selected_gamemode--;
+                }
+                else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+
+                    load_gamemode(selected_gamemode);
+
+                    state.gamemode.init();
+                    game_init();
+
+                    menu_state = Paused;
+
+                }
+            }
+
+            if (menu_state != InGame || event.key.repeat) {
                 continue;
             }
 
             if (event.key.keysym.scancode == mapped_keys[Input_Left]) {
                 input_left();
-
-            } else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
                 input_right();
-            
-            } else if (event.key.keysym.scancode == mapped_keys[Input_InstantDrop]) {
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_InstantDrop]) {
                 input_instant_drop();
-
-            } else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CW]) {
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CW]) {
                 input_rotate_cw();
-
-            } else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CCW]) {
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CCW]) {
                 input_rotate_ccw();
-            
-            } else if (event.key.keysym.scancode == mapped_keys[Input_Hold]) {
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Hold]) {
                 input_hold();
             }
 
@@ -73,37 +115,71 @@ void tick(void) {
 
         case SDL_KEYUP:
 
-            if (pause || event.key.repeat) {
+            if (menu_state != InGame || event.key.repeat) {
                 continue;
             }
 
             if (event.key.keysym.scancode == mapped_keys[Input_Left]) {
                 release_left();
-
-            } else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
                 release_right();
             }
         }
     }
 
-    for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
-        state.input_held[key] = key_state[mapped_keys[key]];
-    }
+    if (menu_state != MainMenu) {
 
-    state.timer_ms = ((clock() - start_time) * 1000) / CLOCKS_PER_SEC;
+        for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
+            state.input_held[key] = key_state[mapped_keys[key]];
+        }
 
-    if (!pause) {
-        close |= update();
+        state.timer_ms = ((clock() - start_time) * 1000) / CLOCKS_PER_SEC;
+
+        if (menu_state != Paused) {
+            if (update()) {
+                menu_state = Closing;
+            }
+        }
     }
 
     SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
     SDL_RenderClear(renderer);
 
-    state.gamemode.draw();
+    if (menu_state == MainMenu) {
 
-    if (pause) {
-        draw_large_text(SCALE * 3, TOP_SPACE_HEIGHT + SCALE * 8, "PAUSED");
-        draw_large_text(SCALE * 2.4, TOP_SPACE_HEIGHT + SCALE * 9, "[Press ESC]");
+        draw_large_text(SCALE * 5, 0, "SELECT GAME");
+
+        for (int i = 0; i < NUM_GAMEMODES; i++) {
+
+            int y = LARGE_FONT_SIZE * (i + 1);
+
+            if (selected_gamemode == i) {
+                
+                SDL_Rect rect = {
+                    0,
+                    y,
+                    BOARD_WIDTH * SCALE + TOP_SPACE_HEIGHT,
+                    LARGE_FONT_SIZE
+                };
+                
+                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+                SDL_RenderDrawRect(renderer, &rect);
+            
+            }
+
+            draw_large_text(SCALE * 5, y, gamemode_names[i]);
+        
+        }
+    }
+    else {
+
+        state.gamemode.draw();
+
+        if (menu_state == Paused) {
+            draw_large_text(SCALE * 3, TOP_SPACE_HEIGHT + SCALE * 8, "PAUSED");
+            draw_large_text(SCALE * 2.4, TOP_SPACE_HEIGHT + SCALE * 9, "[Press ESC]");
+        }
     }
 
     SDL_RenderPresent(renderer);
@@ -111,23 +187,6 @@ void tick(void) {
 }
 
 int main(int argc, char* argv[]) {
-
-    #ifdef __EMSCRIPTEN__
-    argc = 2;
-    argv[1] = "tgm1";
-    #endif
-
-    if (argc == 1) {
-        printf("Please enter a gamemode, use './tetrism list' to see all supported modes.\n");
-        return 0;
-    }
-
-    if (!load_gamemode(argc, argv)) {
-        return 0;
-    }
-
-    state.gamemode.init();
-    game_init();
 
     srand(time(NULL));
 
@@ -156,7 +215,7 @@ int main(int argc, char* argv[]) {
 
     #else
 
-        while (!close) {
+        while (menu_state != Closing) {
             tick();
             SDL_Delay(1000 / 60);
         }

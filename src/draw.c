@@ -4,9 +4,6 @@
 
 #define FONT_PATH "font/AldotheApache.ttf"
 
-#define SMALL_FONT_SIZE 16
-#define LARGE_FONT_SIZE 32
-
 static TTF_Font* small_font;
 static TTF_Font* large_font;
 

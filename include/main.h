@@ -19,12 +19,18 @@
 #define ROW_BYTES BOARD_WIDTH * sizeof(MinoType)
 #define MAX_KICKS 5
 
+#define SMALL_FONT_SIZE 16
+#define LARGE_FONT_SIZE 32
+
 #define TOP_SPACE_HEIGHT 150
 #define RIGHT_SPACE_WIDTH 150
 
 #define PIECE_MINO_COUNT 4
 
 #define RGB(r, g, b) ((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
+
+#define NUM_GAMEMODES 6
+extern const char* gamemode_names[NUM_GAMEMODES];
 
 typedef enum {
     Input_Left = 0,
@@ -86,8 +92,8 @@ typedef struct {
     MinoType minos[BOARD_HEIGHT][BOARD_WIDTH];
 } Board;
 
-struct tagGameData;
-typedef struct tagGameData GameData;
+struct GameData;
+typedef struct GameData GameData;
 typedef struct {
 
     int line_clear_delay;
@@ -116,7 +122,7 @@ typedef struct {
 
 } Gamemode;
 
-struct tagGameData {
+struct GameData {
 
     Piece piece;
     MovementData movement;
@@ -161,7 +167,7 @@ void draw_info_text(int row, const char* format, char* text);
 void draw_info_timer(int row);
 
 // mode.c
-bool load_gamemode(int argc, char* argv[]);
+void load_gamemode(int gamemode);
 
 // main.c
 extern SDL_Renderer* renderer;

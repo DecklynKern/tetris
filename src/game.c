@@ -68,14 +68,15 @@ static void lock_piece(void) {
 
         if (state.gamemode.line_clear_delay) {
             state.line_clear_timer = state.gamemode.line_clear_delay;
-        
-        } else {
+        }
+        else {
             state.are_timer = state.gamemode.are_delay;
         }
         
         state.gamemode.on_line_clear(lines_cleared);
 
-    } else {
+    }
+    else {
         state.are_timer = state.gamemode.are_delay;
     }
 }
@@ -142,11 +143,11 @@ static void new_piece(void) {
 
         if (state.input_held[Input_Rot_CCW]) {
             state.piece.rotation = Rot_W;
-
-        } else if (state.input_held[Input_Rot_CW]) {
-            state.piece.rotation = Rot_E;
-            
-        } else {
+        }
+        else if (state.input_held[Input_Rot_CW]) {
+            state.piece.rotation = Rot_E;    
+        }
+        else {
             state.piece.rotation = Rot_N;
         }
 
@@ -223,7 +224,8 @@ void input_hold(void) {
 
         reset_position();
 
-    } else {
+    }
+    else {
         state.held_piece = state.piece.type;
         new_piece();
     }
@@ -314,15 +316,15 @@ bool update(void) {
 
     if (placement_valid(get_piece_minos(), state.piece.x, state.piece.y + 1)) {
         state.movement.lock_delay_timer = state.gamemode.lock_delay;
-
-    } else {
+    }
+    else {
 
         state.movement.gravity_count = 0;
 
         if (!state.movement.lock_delay_timer || (state.input_held[Input_Down] && state.gamemode.lock_on_down_held)) {
             lock_piece();
-
-        } else {
+        }
+        else {
             state.movement.lock_delay_timer--;
         }
     }

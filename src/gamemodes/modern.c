@@ -148,8 +148,8 @@ static MinoType generate_new_piece(void) {
 
     if (bag[1] == Empty) {
         new_bag();
-    
-    } else {
+    }
+    else {
         
         for (int i = 0; i < 6; i++) {
             bag[i] = bag[i + 1];
