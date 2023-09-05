@@ -44,7 +44,7 @@ void draw_mino(int cell_x, int cell_y, MinoType type) {
     draw_mino_scaled(cell_x, cell_y, type, SCALE);
 }
 
-void draw_text(int x, int y, const char* text, TTF_Font* font) {
+void draw_text(int x, int y, const char* text, const TTF_Font* font) {
 
     SDL_Colour white = {255, 255, 255};
     SDL_Surface* surface = TTF_RenderText_Solid(font, text, white);
@@ -79,7 +79,7 @@ void draw_info_value(int row, const char* format, int value) {
     draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, text);
 }
 
-void draw_info_text(int row, const char* format, char* text) {
+void draw_info_text(int row, const char* format, const char* text) {
     char final_text[20];
     sprintf(final_text, format, text);
     draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, final_text);
