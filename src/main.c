@@ -4,7 +4,6 @@
 #ifdef __EMSCRIPTEN__
     #include <emscripten.h>
     #define SDL_FLAGS SDL_INIT_EVERYTHING & ~(SDL_INIT_TIMER | SDL_INIT_HAPTIC | SDL_INIT_AUDIO)
-
 #else
     #define SDL_FLAGS SDL_INIT_EVERYTHING
 #endif
@@ -186,7 +185,7 @@ void tick(void) {
 
 }
 
-int main(int argc, char* argv[]) {
+int main(void) {
 
     srand(time(NULL));
 
@@ -202,8 +201,8 @@ int main(int argc, char* argv[]) {
         (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + RIGHT_SPACE_WIDTH,
         0
     );
+    
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-
     key_state = SDL_GetKeyboardState(NULL);
 
     init_fonts();
@@ -212,7 +211,6 @@ int main(int argc, char* argv[]) {
 
     #ifdef __EMSCRIPTEN__
         emscripten_set_main_loop(tick, 60, false);
-
     #else
 
         while (menu_state != Closing) {
