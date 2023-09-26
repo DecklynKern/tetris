@@ -1,5 +1,6 @@
 #include <SDL2/SDL_scancode.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <time.h>
 #ifdef __EMSCRIPTEN__
     #include <emscripten.h>
@@ -33,7 +34,19 @@ SDL_Renderer* renderer;
 static MenuState menu_state = MainMenu;
 static int selected_gamemode = 0;
 static const Uint8* key_state;
-static clock_t start_time;
+
+static double timer_seconds_before_last_pause;
+static struct timeval last_unpause_time;
+
+static double seconds_since_last_unpause(void) {
+
+    struct timeval current_time;
+    gettimeofday(&current_time, NULL);
+
+    return current_time.tv_sec - last_unpause_time.tv_sec + 
+        (double) (current_time.tv_usec - last_unpause_time.tv_usec) / 1000000;
+
+}
 
 void tick(void) {
 
@@ -51,9 +64,11 @@ void tick(void) {
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
                 
                 if (menu_state == InGame) {
+                    timer_seconds_before_last_pause += seconds_since_last_unpause();
                     menu_state = Paused;
                 }
                 else if (menu_state == Paused) {
+                    gettimeofday(&last_unpause_time, NULL);
                     menu_state = InGame;
                 }
 
@@ -132,13 +147,14 @@ void tick(void) {
         for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
             state.input_held[key] = key_state[mapped_keys[key]];
         }
+    }
 
-        state.timer_ms = ((clock() - start_time) * 1000) / CLOCKS_PER_SEC;
+    if (menu_state == InGame) {
 
-        if (menu_state != Paused) {
-            if (update()) {
-                menu_state = Closing;
-            }
+        state.timer_ms = (timer_seconds_before_last_pause + seconds_since_last_unpause()) * 1000;
+        
+        if (update()) {
+            menu_state = Closing;
         }
     }
 
@@ -206,8 +222,6 @@ int main(void) {
     key_state = SDL_GetKeyboardState(NULL);
 
     init_fonts();
-
-    start_time = clock();
 
     #ifdef __EMSCRIPTEN__
         emscripten_set_main_loop(tick, 60, false);

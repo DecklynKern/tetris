@@ -168,7 +168,7 @@ void draw_mino(int cell_x, int cell_y, MinoType type);
 void draw_small_text(int x, int y, const char* text);
 void draw_large_text(int x, int y, const char* text);
 void draw_info_value(int row, const char* format, int value);
-void draw_info_text(int row, const char* format, char* text);
+void draw_info_text(int row, const char* format, const char* text);
 void draw_info_timer(int row);
 void draw_board();
 void draw_single_next(MinoType next);

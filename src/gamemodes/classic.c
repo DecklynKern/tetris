@@ -1,7 +1,18 @@
 #include "../../include/main.h"
 #include <SDL2/SDL_stdinc.h>
 
+// much of this is taken from the fantastic article at
+// https://meatfighter.com/nintendotetrisai/?a=b#The_Mechanics_of_Nintendo_Tetris
+
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+// static const int nes_colour_table[] {
+
+// }
+
+// static const int nes_colour_palette[32] {
+
+// }
 
 static const Uint32 piece_colours[9] = {
     RGB(  0,   0,   0),
@@ -93,12 +104,19 @@ static const Point nrs_left_handed_minos[7][4][PIECE_MINO_COUNT] = {
     }
 };
 
-static MinoType next_piece;
 
 static int start_level = 0;
 static int level = 0;
 static int lines = 0;
 static int score = 0;
+
+static MinoType next_piece;
+
+static Uint8 total_pieces = 0;
+static Uint8 last_spawned_mino_id = 0;
+static Uint16 rng_seed;
+static Uint8 nes_to_tetrism_minotype[7] = {T, J, Z, O, S, L, I};
+static Uint8 nes_orientation_id_table[7] = {2, 7, 8, 10, 11, 14, 18};
 
 #define NUM_LEVELS 30
 
@@ -135,10 +153,17 @@ static const int gravity_factor_table[NUM_LEVELS] = {
     1
 };
 
+static MinoType new_piece(void);
+
 static void init(void) {
-    next_piece = rand() % 7 + 1;
+
+    // gotta randomize the seed initially, afterwards it's accurate to the nes
+    rng_seed = rand();
+    next_piece = new_piece();
+
     state.gamemode.gravity_factor = gravity_factor_table[level];
     state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
+
 }
 
 static void on_line_clear(int num_lines) {
@@ -180,13 +205,39 @@ static void on_line_clear(int num_lines) {
     }
 }
 
+static void update_lfsr(void) {
+    rng_seed = ((((rng_seed >> 9) & 1) ^ ((rng_seed >> 1) & 1)) << 15) | (rng_seed >> 1);
+}
+
 static MinoType new_piece(void) {
 
-    MinoType new_piece_type = next_piece;
-    next_piece = rand() % 7 + 1;
-    
-    return new_piece_type;
+    total_pieces++;
 
+    Uint8 index = rng_seed >> 8;
+    index += total_pieces;
+    index &= 7;
+
+    if (index == 7 || index == last_spawned_mino_id) {
+
+        update_lfsr();
+
+        index = rng_seed >> 8;
+        index &= 7;
+        index += nes_orientation_id_table[last_spawned_mino_id];
+        index %= 7;
+
+    }
+
+    last_spawned_mino_id = index;
+
+    MinoType to_spawn = next_piece;
+    next_piece = nes_to_tetrism_minotype[index];
+    return to_spawn;
+
+}
+
+static void nes_update(void) {
+    update_lfsr();
 }
 
 static void draw(void) {
@@ -221,6 +272,7 @@ const Gamemode nes_mode = {
     .init = init,
     .on_line_clear = on_line_clear,
     .generate_new_piece = new_piece,
+    .update = nes_update,
     .draw = draw
 
 };
