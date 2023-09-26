@@ -114,7 +114,7 @@ static MinoType next_piece;
 
 static Uint8 total_pieces = 0;
 static Uint8 last_spawned_mino_id = 0;
-static Uint16 rng_seed;
+static Uint16 rng_seed = 0x8988;
 static Uint8 nes_to_tetrism_minotype[7] = {T, J, Z, O, S, L, I};
 static Uint8 nes_orientation_id_table[7] = {2, 7, 8, 10, 11, 14, 18};
 
@@ -153,12 +153,17 @@ static const int gravity_factor_table[NUM_LEVELS] = {
     1
 };
 
+static void update_lfsr(void);
 static MinoType new_piece(void);
 
 static void init(void) {
 
-    // gotta randomize the seed initially, afterwards it's accurate to the nes
-    rng_seed = rand();
+    // simulate random number of frames since game was turned on
+    int num_frames = rand() % 100;
+    for (int i = 0; i < num_frames; i++) {
+        update_lfsr();
+    }
+    
     next_piece = new_piece();
 
     state.gamemode.gravity_factor = gravity_factor_table[level];
