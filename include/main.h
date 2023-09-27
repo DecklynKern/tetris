@@ -15,7 +15,7 @@
 #define BOARD_WIDTH 10
 #define BOARD_HEIGHT 40
 #define INVISIBLE_ROWS 20
-#define SCALE 30
+#define SCALE 32
 #define ROW_BYTES BOARD_WIDTH * sizeof(MinoType)
 #define MAX_KICKS 5
 
@@ -76,6 +76,7 @@ typedef enum {
 typedef struct {
     int das_timer;
     int das_direction;
+    bool in_lock_delay;
     int lock_delay_timer;
     int gravity_count;
     bool down_held;
@@ -148,6 +149,7 @@ bool placement_valid(const Point* piece_minos, int piece_x, int piece_y);
 
 void input_left(void);
 void input_right(void);
+void input_down(void);
 void input_instant_drop(void);
 void input_rotate_cw(void);
 void input_rotate_ccw(void);
@@ -155,6 +157,7 @@ void input_hold(void);
 
 void release_left(void);
 void release_right(void);
+void release_down(void);
 
 void game_init(void);
 const Point* get_piece_minos(void);

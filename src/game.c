@@ -60,6 +60,8 @@ static void lock_piece(void) {
         }
     }
 
+    state.movement.in_lock_delay = false;
+
     if (state.gamemode.on_lock) {
         state.gamemode.on_lock((bool)lines_cleared);
     }
@@ -139,21 +141,22 @@ static void new_piece(void) {
     state.piece.type = (*state.gamemode.generate_new_piece)();
     state.has_held = false;
 
-    if (state.gamemode.irs) {
+    if (!state.gamemode.irs) {
+        return;
+    }
 
-        if (state.input_held[Input_Rot_CCW]) {
-            state.piece.rotation = Rot_W;
-        }
-        else if (state.input_held[Input_Rot_CW]) {
-            state.piece.rotation = Rot_E;    
-        }
-        else {
-            state.piece.rotation = Rot_N;
-        }
+    if (state.input_held[Input_Rot_CCW]) {
+        state.piece.rotation = Rot_W;
+    }
+    else if (state.input_held[Input_Rot_CW]) {
+        state.piece.rotation = Rot_E;    
+    }
+    else {
+        state.piece.rotation = Rot_N;
+    }
 
-        if (!current_placement_valid()) {
-            state.piece.rotation = Rot_N;
-        }
+    if (!current_placement_valid()) {
+        state.piece.rotation = Rot_N;
     }
 }
 
@@ -256,6 +259,8 @@ const Point* get_piece_minos(void) {
 
 bool update(void) {
 
+    //TODO: add nes not allowing down + shift
+
     // technically missing das change restrictions in tgm
     if (state.movement.das_timer) {
 
@@ -296,7 +301,7 @@ bool update(void) {
 
     }
 
-    if (state.input_held[Input_Down]) {
+    if (state.movement.down_held) {
         state.movement.gravity_count += state.gamemode.soft_drop_factor;
     }
 
@@ -306,22 +311,28 @@ bool update(void) {
 
         state.movement.gravity_count -= state.gamemode.gravity_factor;
 
-        if (!try_move(0, 1)) {
-            break;
+        if (try_move(0, 1)) {
+            continue;
         }
-        
-        state.movement.lock_delay_timer = state.gamemode.lock_delay;
+
+        if (!state.movement.in_lock_delay) {
+            state.movement.in_lock_delay = true;
+            state.movement.lock_delay_timer = state.gamemode.lock_delay;
+        }
+
+        break;
 
     }
 
     if (placement_valid(get_piece_minos(), state.piece.x, state.piece.y + 1)) {
+        state.movement.in_lock_delay = false;
         state.movement.lock_delay_timer = state.gamemode.lock_delay;
     }
-    else {
+    else if (state.movement.in_lock_delay) {
 
         state.movement.gravity_count = 0;
 
-        if (!state.movement.lock_delay_timer || (state.input_held[Input_Down] && state.gamemode.lock_on_down_held)) {
+        if (!state.movement.lock_delay_timer || (state.movement.down_held && state.gamemode.lock_on_down_held)) {
             lock_piece();
         }
         else {

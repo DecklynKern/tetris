@@ -112,6 +112,9 @@ void tick(void) {
             else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
                 input_right();
             }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Down]) {
+                input_down();
+            }
             else if (event.key.keysym.scancode == mapped_keys[Input_InstantDrop]) {
                 input_instant_drop();
             }
@@ -138,6 +141,9 @@ void tick(void) {
             }
             else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
                 release_right();
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Down]) {
+                release_down();
             }
         }
     }
@@ -197,6 +203,7 @@ void tick(void) {
         }
     }
 
+
     SDL_RenderPresent(renderer);
 
 }
@@ -213,8 +220,8 @@ int main(void) {
         "Tetris!",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        BOARD_WIDTH * SCALE + TOP_SPACE_HEIGHT,
-        (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + RIGHT_SPACE_WIDTH,
+        BOARD_WIDTH * SCALE + RIGHT_SPACE_WIDTH,
+        (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + TOP_SPACE_HEIGHT,
         0
     );
     
