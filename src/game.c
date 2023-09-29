@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../include/main.h"
+#include "main.h"
 
 bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
     
@@ -162,6 +162,10 @@ static void new_piece(void) {
 
 void input_left(void) {
 
+    if (state.movement.das_direction == 1 && !(state.gamemode.socd_allow_das_overwrite & SOCD_Left)) {
+        return;
+    }
+
     if (!state.line_clear_timer && !state.are_timer) {
         try_move(-1, 0);
     }
@@ -173,13 +177,17 @@ void input_left(void) {
 
 void input_right(void) {
 
+    if (state.movement.das_direction == -1 && !(state.gamemode.socd_allow_das_overwrite & SOCD_Right)) {
+        return;
+    }
+
     if (!state.line_clear_timer && !state.are_timer) {
         try_move(1, 0);
     }
 
     state.movement.das_timer = state.gamemode.das_delay;
     state.movement.das_direction = 1;
-
+    
 }
 
 void input_down(void) {
@@ -238,11 +246,31 @@ void input_hold(void) {
 }
 
 void release_left(void) {
-    state.movement.das_timer = 0;
+
+    if (state.movement.das_direction == -1) {
+
+        state.movement.das_direction = 0;
+        state.movement.das_timer = 0;
+    
+    }
+
+    if (state.input_held[Input_Right]) {
+        input_right();
+    }
 }
 
 void release_right(void) {
-    state.movement.das_timer = 0;
+
+    if (state.movement.das_direction == 1) {
+
+        state.movement.das_direction = 0;
+        state.movement.das_timer = 0;
+    
+    }
+
+    if (state.input_held[Input_Left]) {
+        input_left();
+    }
 }
 
 void release_down(void) {

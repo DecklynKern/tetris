@@ -1,4 +1,4 @@
-#include "../../include/main.h"
+#include "main.h"
 
 static const Uint32 piece_colours[9] = {
     RGB(  0,   0,   0),
@@ -184,6 +184,7 @@ const Gamemode modern_mode = {
     .lock_on_down_held = false,
     .irs = false,
     .instant_drop_type = HardDrop,
+    .socd_allow_das_overwrite = SOCD_Both,
     .num_kicks = 4,
     .piece_rot_minos = &srs_minos,
     .piece_colours = (Uint32 (*const)[]) &piece_colours,

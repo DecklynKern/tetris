@@ -1,7 +1,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "../../include/tgm.h"
+#include "tgm.h"
 
 #define HISTORY_LEN 4
 #define NUM_TRIES 4
@@ -308,6 +308,7 @@ static void draw(void) {
     .can_hold = false,\
     .lock_on_down_held = true,\
     .irs = true,\
+    .socd_allow_das_overwrite = SOCD_Left,\
     .num_kicks = 2,\
     .piece_rot_minos = &ars_minos,\
     .piece_colours = (Uint32 (*const)[]) &piece_colours,\

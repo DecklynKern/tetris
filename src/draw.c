@@ -1,4 +1,4 @@
-#include "../include/main.h"
+#include "main.h"
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
@@ -37,6 +37,10 @@ void init_fonts(void) {
 }
 
 void draw_mino_as_colour(int cell_x, int cell_y, int scale, Uint32 colour) {
+
+    if (state.menu_state == Paused) {
+        colour = ghostify(colour);
+    }
 
     SDL_Rect rect = {
         .x = cell_x * scale,

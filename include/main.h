@@ -28,6 +28,7 @@
 #define PIECE_MINO_COUNT 4
 
 #define RGB(r, g, b) (Uint32)((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 #define NUM_GAMEMODES 6
 extern const char* gamemode_names[NUM_GAMEMODES];
@@ -73,6 +74,13 @@ typedef enum {
     HardDrop
 } InstantDropType;
 
+typedef enum {
+    SOCD_None   = 0b00,
+    SOCD_Left   = 0b01,
+    SOCD_Right  = 0b10,
+    SOCD_Both   = 0b11
+} SOCD_Direction;
+
 typedef struct {
     int das_timer;
     int das_direction;
@@ -111,6 +119,7 @@ typedef struct {
     const bool lock_on_down_held;
     const bool irs;
     const InstantDropType instant_drop_type;
+    const SOCD_Direction socd_allow_das_overwrite;
     const int num_kicks;
     const Point (*const piece_rot_minos)[7][4][PIECE_MINO_COUNT];
     Uint32 (*const piece_colours)[];
@@ -125,12 +134,21 @@ typedef struct {
 
 } Gamemode;
 
+typedef enum {
+    MainMenu,
+    InGame,
+    Paused,
+    Closing
+} MenuState;
+
 struct GameData {
 
     Piece piece;
     MovementData movement;
     Board board;
     Gamemode gamemode;
+
+    MenuState menu_state;
 
     bool input_held[NUM_HOLDABLE_KEYS];
 

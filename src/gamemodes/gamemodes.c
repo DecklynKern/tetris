@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "../../include/gamemodes.h"
+#include "gamemodes.h"
 
 const char* gamemode_names[NUM_GAMEMODES] = {
     "NES",
