@@ -17,7 +17,7 @@ Run ```make wasm```.
 ## Windows
 Dependencies:
 - CMake and gcc installed
-- MinGW installed and in the PATH
+- MinGW32 installed and in the PATH
 - [SDL2](https://github.com/libsdl-org/SDL/releases), [SDL2_ttf](https://github.com/libsdl-org/SDL_ttf/releases), and [SDL2_image](https://github.com/libsdl-org/SDL_image/releases) all from "[package name]-devel-2.xx.x-mingw" all in one folder put into the makefile at SDL_WIN_LIB
 
 Runtime requirements:

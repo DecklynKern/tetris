@@ -1,4 +1,4 @@
-SDL_WIN_LIB = ..#put win path here e.g. SDL_WIN_LIB = C:/SDL
+SDL_WIN_LIB = #put win path here e.g. SDL_WIN_LIB = C:/SDL
 DEFAULT_ARGS = src/*.c src/gamemodes/*.c -Iinclude -Wall
 LIBS =  -lSDL2 -lSDL2_image -lSDL2_ttf -lm
 OUTPUT_NAME = -o tetrism
