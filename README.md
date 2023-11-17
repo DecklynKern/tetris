@@ -1,5 +1,6 @@
 # tetrism
 Font used: https://www.dafont.com/aldo-the-apache.font
+Web version at: https://decklynkern.github.io/tetrism
 
 # Build info
 ## Linux
