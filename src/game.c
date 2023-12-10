@@ -1,7 +1,21 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "main.h"
+#include "../include/main.h"
+
+bool board_is_clear(void) {
+
+    for (int y = 0; y < BOARD_HEIGHT; y++) {
+        for (int x = 0; x < BOARD_WIDTH; x++) {
+            if (state.board.minos[y][x] != Empty) {
+                return false;
+            }
+        }
+    }
+            
+    return true;
+    
+}
 
 bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
     
@@ -133,7 +147,6 @@ static void reset_position(void) {
 
 }
 
-
 static void new_piece(void) {
 
     reset_position();
@@ -196,7 +209,7 @@ void input_down(void) {
 
 void input_instant_drop(void) {
 
-    if (state.gamemode.instant_drop_type == NoInstantDrop) {
+    if (state.gamemode.instant_drop_type == Drop_NoInstant) {
         return;
     }
 
@@ -204,7 +217,7 @@ void input_instant_drop(void) {
         state.piece.y++;
     }
 
-    if (state.gamemode.instant_drop_type == HardDrop) {
+    if (state.gamemode.instant_drop_type == Drop_Hard) {
         lock_piece();
     }
 }
@@ -223,7 +236,7 @@ void input_rotate_ccw(void) {
 
 void input_hold(void) {
 
-    if (!state.gamemode.can_hold || state.has_held) {
+    if (!state.gamemode.can_hold || state.has_held || state.are_timer || state.line_clear_timer) {
         return;
     }
 
@@ -278,6 +291,7 @@ void release_down(void) {
 }
 
 void game_init(void) {
+    memset(state.board.minos, Empty, sizeof(state.board.minos));
     new_piece();
 }
 

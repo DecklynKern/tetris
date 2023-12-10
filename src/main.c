@@ -1,6 +1,7 @@
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_scancode.h>
 #include <stdio.h>
-#include <sys/time.h>
+#include <math.h>
 #include <time.h>
 #ifdef __EMSCRIPTEN__
     #include <emscripten.h>
@@ -10,6 +11,7 @@
 #endif
 
 #include "../include/main.h"
+#include "../include/menu.h"
 
 const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
     SDL_SCANCODE_LEFT,
@@ -22,25 +24,31 @@ const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
 };
 
 GameData state = {0};
+static SDL_Window* window;
 SDL_Renderer* renderer;
-
-static int selected_gamemode = 0;
+ 
 static const Uint8* key_state;
 
-static double timer_seconds_before_last_pause;
-static struct timeval last_unpause_time;
-
-static double seconds_since_last_unpause(void) {
-
-    struct timeval current_time;
-    gettimeofday(&current_time, NULL);
-
-    return current_time.tv_sec - last_unpause_time.tv_sec + 
-        (double) (current_time.tv_usec - last_unpause_time.tv_usec) / 1000000;
-
+static bool in_menu(void) {
+    return current_menu;
 }
 
-void tick(void) {
+static bool in_game(void) {
+    return !current_menu;
+}
+
+static void do_quit(void) {
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    
+    SDL_Quit();
+    
+    exit(0);
+    
+}
+
+static void tick(void) {
 
     SDL_Event event;
 
@@ -48,53 +56,48 @@ void tick(void) {
         switch (event.type) {
 
         case SDL_QUIT:
-            state.menu_state = Closing;
+            do_quit();
             break;
 
         case SDL_KEYDOWN:
 
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
                 
-                if (state.menu_state == InGame) {
-                    timer_seconds_before_last_pause += seconds_since_last_unpause();
-                    state.menu_state = Paused;
+                if (current_menu == &pause_menu) {
+                    current_menu = NULL;
+                    timer_unpause();
                 }
-                else if (state.menu_state == Paused) {
-                    gettimeofday(&last_unpause_time, NULL);
-                    state.menu_state = InGame;
+                else if (in_game()) {
+                    load_menu(&pause_menu);
+                    timer_pause();
                 }
 
                 continue;
 
             }
 
-            if (state.menu_state == MainMenu) {
-
-                if (
-                    event.key.keysym.scancode == SDL_SCANCODE_DOWN &&
-                    selected_gamemode < NUM_GAMEMODES - 1
-                ) {
-                    selected_gamemode++;
+            if (in_menu()) {
+                
+                switch (event.key.keysym.scancode) {
+                    case SDL_SCANCODE_UP:
+                        menu_move_up();
+                        break;
+                    case SDL_SCANCODE_DOWN:
+                        menu_move_down();
+                        break;
+                    case SDL_SCANCODE_RETURN:
+                    case SDL_SCANCODE_SPACE:
+                        menu_select();
+                        break;
+                    default:
+                        menu_handle_key(event.key.keysym.scancode);
                 }
-                else if (
-                    event.key.keysym.scancode == SDL_SCANCODE_UP &&
-                    selected_gamemode > 0
-                ) {
-                    selected_gamemode--;
-                }
-                else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-
-                    load_gamemode(selected_gamemode);
-
-                    state.gamemode.init();
-                    game_init();
-
-                    state.menu_state = Paused;
-
-                }
+                
+                continue;
+                
             }
 
-            if (state.menu_state != InGame || event.key.repeat) {
+            if (event.key.repeat) {
                 continue;
             }
 
@@ -124,7 +127,7 @@ void tick(void) {
 
         case SDL_KEYUP:
 
-            if (state.menu_state != InGame || event.key.repeat) {
+            if (in_menu() || event.key.repeat) {
                 continue;
             }
 
@@ -140,61 +143,28 @@ void tick(void) {
         }
     }
 
-    if (state.menu_state != MainMenu) {
-
-        for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
-            state.input_held[key] = key_state[mapped_keys[key]];
-        }
+    for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
+        state.input_held[key] = key_state[mapped_keys[key]];
     }
 
-    if (state.menu_state == InGame) {
+    if (in_game()) {
 
-        state.timer_ms = (timer_seconds_before_last_pause + seconds_since_last_unpause()) * 1000;
+        state.timer_ms = get_timer_seconds() * 1000;
         
         if (update()) {
-            state.menu_state = Closing;
+            load_menu(&main_menu);
         }
     }
 
     SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
     SDL_RenderClear(renderer);
-
-    if (state.menu_state == MainMenu) {
-
-        draw_large_text(SCALE * 5, 0, "SELECT GAME");
-
-        for (int i = 0; i < NUM_GAMEMODES; i++) {
-
-            int y = LARGE_FONT_SIZE * (i + 1);
-
-            if (selected_gamemode == i) {
-                
-                SDL_Rect rect = {
-                    0,
-                    y,
-                    BOARD_WIDTH * SCALE + TOP_SPACE_HEIGHT,
-                    LARGE_FONT_SIZE
-                };
-                
-                SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-                SDL_RenderDrawRect(renderer, &rect);
-            
-            }
-
-            draw_large_text(SCALE * 5, y, gamemode_names[i]);
-        
-        }
+    
+    if (in_game()) {
+        state.gamemode.draw();
     }
     else {
-
-        state.gamemode.draw();
-
-        if (state.menu_state == Paused) {
-            draw_large_text(SCALE * 3, TOP_SPACE_HEIGHT + SCALE * 8, "PAUSED");
-            draw_large_text(SCALE * 2.4, TOP_SPACE_HEIGHT + SCALE * 9, "[Press ESC]");
-        }
+        draw_menu();
     }
-
 
     SDL_RenderPresent(renderer);
 
@@ -212,12 +182,12 @@ int main(void) {
         "Tetris!",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        BOARD_WIDTH * SCALE + RIGHT_SPACE_WIDTH,
-        (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + TOP_SPACE_HEIGHT,
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT,
         0
     );
 
-    state.menu_state = MainMenu;
+    load_menu(&main_menu);
     
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     key_state = SDL_GetKeyboardState(NULL);
@@ -228,15 +198,10 @@ int main(void) {
         emscripten_set_main_loop(tick, 60, false);
     #else
 
-        while (state.menu_state != Closing) {
+        while (1) {
             tick();
-            SDL_Delay(1000 / 60);
+            SDL_Delay((int) round(1000.0 / (state.gamemode.fps == 0 ? 60 : state.gamemode.fps)));
         }
-
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        
-        SDL_Quit();
 
     #endif
 

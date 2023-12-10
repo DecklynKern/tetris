@@ -1,7 +1,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "tgm.h"
+#include "../../include/tgm.h"
+#include "../../include/menu.h"
 
 #define HISTORY_LEN 4
 #define NUM_TRIES 4
@@ -132,17 +133,11 @@ static void tap_tgmplus_on_lock(bool cleared_lines) {
 
 static void tgm_on_line_clear(int num_lines) {
 
-    int bravo = 4;
-
-    for (int y = 0; y < BOARD_HEIGHT; y++) {
-        for (int x = 0; x < BOARD_WIDTH; x++) {
-            if (state.board.minos[y][x]) {
-                bravo = 1;
-                goto no_bravo;
-            }
-        }
+    int bravo = 1;
+    
+    if (board_is_clear()) {
+        bravo = 4;
     }
-    no_bravo:
 
     combo += 2 * num_lines - 2;
     score += ((level + num_lines + 3) / 4 + soft) * num_lines * combo * bravo;
@@ -311,21 +306,25 @@ static void draw(void) {
     .socd_allow_das_overwrite = SOCD_Left,\
     .num_kicks = 2,\
     .piece_rot_minos = &ars_minos,\
-    .piece_colours = (Uint32 (*const)[]) &piece_colours,\
+    .piece_colours = &piece_colours,\
     \
-    .draw = draw,\
+    .draw = draw
 
 #define TAP_SETTINGS \
-    TGM_SETTINGS\
+    TGM_SETTINGS, \
     \
-    .instant_drop_type = SonicDrop,\
+    .fps = 61.680, \
+    \
+    .instant_drop_type = Drop_Sonic,\
     \
     .get_kick = get_kick,\
-    .generate_new_piece = generate_new_piece,\
+    .generate_new_piece = generate_new_piece
 
 const Gamemode tgm1_mode = {
 
-    TGM_SETTINGS
+    TGM_SETTINGS,
+    
+    .fps = 59.84,
 
     .line_clear_delay = 41,
     .are_delay = 30,
@@ -333,7 +332,7 @@ const Gamemode tgm1_mode = {
     .gravity = 4,
     .das_delay = 16,
 
-    .instant_drop_type = NoInstantDrop,
+    .instant_drop_type = Drop_NoInstant,
 
     .init = tgm1_init,
     .get_kick = get_kick,
@@ -346,7 +345,7 @@ const Gamemode tgm1_mode = {
 
 const Gamemode tap_master_mode = {
 
-    TAP_SETTINGS
+    TAP_SETTINGS,
 
     .line_clear_delay = 40,
     .are_delay = 27,
@@ -363,7 +362,7 @@ const Gamemode tap_master_mode = {
 
 const Gamemode tap_tgmplus_mode = {
 
-    TAP_SETTINGS
+    TAP_SETTINGS,
 
     .line_clear_delay = 40,
     .are_delay = 27,
@@ -380,7 +379,7 @@ const Gamemode tap_tgmplus_mode = {
 
 const Gamemode tap_death_mode = {
 
-    TAP_SETTINGS
+    TAP_SETTINGS,
 
     .line_clear_delay = 8,
     .are_delay = 18,
@@ -393,4 +392,14 @@ const Gamemode tap_death_mode = {
     .on_line_clear = tap_death_on_line_clear,
     .update = tgm_update
 
+};
+
+const Menu tgm_menu = {
+    .menu_items = (MenuItem[4]) {
+        BUTTON_LOAD_GAMEMODE("TGM1", tgm1_mode),
+        BUTTON_LOAD_GAMEMODE("TAP Master", tap_master_mode),
+        BUTTON_LOAD_GAMEMODE("TAP TGM+", tap_tgmplus_mode),
+        BUTTON_LOAD_GAMEMODE("TAP Death", tap_death_mode)
+    },
+    .menu_item_count = 4
 };

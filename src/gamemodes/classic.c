@@ -1,5 +1,7 @@
-#include "classic.h"
 #include <SDL2/SDL_stdinc.h>
+
+#include "../../include/classic.h"
+#include "../../include/menu.h"
 
 // much of this is taken from the fantastic article at
 // https://meatfighter.com/nintendotetrisai/?a=b#The_Mechanics_of_Nintendo_Tetris
@@ -16,6 +18,8 @@ static Uint8 last_spawned_mino_id = 0;
 static Uint16 rng_seed = 0x8988;
 
 static void init(void) {
+    
+    level = start_level;
 
     // simulate random number of frames since game was turned on
     int num_frames = rand() % 100;
@@ -141,7 +145,7 @@ const Gamemode nes_mode = {
     .can_hold = false,
     .lock_on_down_held = false,
     .irs = false,
-    .instant_drop_type = NoInstantDrop,
+    .instant_drop_type = Drop_NoInstant,
     .socd_allow_das_overwrite = SOCD_Right,
     .num_kicks = 0,
     .piece_rot_minos = &nrs_right_handed_minos,
@@ -175,3 +179,11 @@ const Gamemode nes_mode = {
 //     .draw = draw
 
 // };
+
+const Menu nes_menu = {
+    .menu_items = (MenuItem[2]) {
+        NUM_BOX("Start Level:", 0, 19, start_level),
+        BUTTON_LOAD_GAMEMODE("Start", nes_mode),
+    },
+    .menu_item_count = 2
+};

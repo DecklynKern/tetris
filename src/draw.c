@@ -1,21 +1,22 @@
-#include "main.h"
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
+
+#include "../include/main.h"
 
 #define FONT_PATH "font/AldotheApache.ttf"
 
 static TTF_Font* small_font;
 static TTF_Font* large_font;
 
-static inline Uint8 get_r(Uint32 colour) {
+static Uint8 get_r(Uint32 colour) {
     return colour >> 24;
 }
 
-static inline Uint8 get_g(Uint32 colour) {
+static Uint8 get_g(Uint32 colour) {
     return ((colour << 8) >> 24);
 }
 
-static inline Uint8 get_b(Uint32 colour) {
+static Uint8 get_b(Uint32 colour) {
     return ((colour << 16) >> 24);
 }
 
@@ -37,10 +38,6 @@ void init_fonts(void) {
 }
 
 void draw_mino_as_colour(int cell_x, int cell_y, int scale, Uint32 colour) {
-
-    if (state.menu_state == Paused) {
-        colour = ghostify(colour);
-    }
 
     SDL_Rect rect = {
         .x = cell_x * scale,
@@ -109,7 +106,7 @@ void draw_info_timer(int row) {
     draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, text);
 }
 
-void draw_board() {
+void draw_board(void) {
 
     for (int y = INVISIBLE_ROWS; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {

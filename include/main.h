@@ -15,7 +15,7 @@
 #define BOARD_WIDTH 10
 #define BOARD_HEIGHT 40
 #define INVISIBLE_ROWS 20
-#define SCALE 32
+#define SCALE 24
 #define ROW_BYTES BOARD_WIDTH * sizeof(MinoType)
 #define MAX_KICKS 5
 
@@ -24,6 +24,9 @@
 
 #define TOP_SPACE_HEIGHT 150
 #define RIGHT_SPACE_WIDTH 150
+
+#define SCREEN_WIDTH BOARD_WIDTH * SCALE + RIGHT_SPACE_WIDTH
+#define SCREEN_HEIGHT (BOARD_HEIGHT - INVISIBLE_ROWS) * SCALE + TOP_SPACE_HEIGHT
 
 #define PIECE_MINO_COUNT 4
 
@@ -69,9 +72,9 @@ typedef enum {
 } Rotation;
 
 typedef enum {
-    NoInstantDrop = 0,
-    SonicDrop,
-    HardDrop
+    Drop_NoInstant = 0,
+    Drop_Sonic,
+    Drop_Hard
 } InstantDropType;
 
 typedef enum {
@@ -104,6 +107,8 @@ typedef struct {
 struct GameData;
 typedef struct GameData GameData;
 typedef struct {
+    
+    const float fps;
 
     int line_clear_delay;
     int are_delay;
@@ -122,7 +127,7 @@ typedef struct {
     const SOCD_Direction socd_allow_das_overwrite;
     const int num_kicks;
     const Point (*const piece_rot_minos)[7][4][PIECE_MINO_COUNT];
-    Uint32 (*const piece_colours)[];
+    const Uint32 (*piece_colours)[];
     
     void (*const init)(void);
     Point (*const get_kick)(Rotation new_rotation, int attempt);
@@ -134,21 +139,12 @@ typedef struct {
 
 } Gamemode;
 
-typedef enum {
-    MainMenu,
-    InGame,
-    Paused,
-    Closing
-} MenuState;
-
 struct GameData {
 
     Piece piece;
     MovementData movement;
     Board board;
     Gamemode gamemode;
-
-    MenuState menu_state;
 
     bool input_held[NUM_HOLDABLE_KEYS];
 
@@ -163,6 +159,7 @@ struct GameData {
 };
 
 // game.c
+bool board_is_clear(void);
 bool placement_valid(const Point* piece_minos, int piece_x, int piece_y);
 
 void input_left(void);
@@ -191,11 +188,13 @@ void draw_large_text(int x, int y, const char* text);
 void draw_info_value(int row, const char* format, int value);
 void draw_info_text(int row, const char* format, const char* text);
 void draw_info_timer(int row);
-void draw_board();
+void draw_board(void);
 void draw_single_next(MinoType next);
 
-// mode.c
-void load_gamemode(int gamemode);
+// timer.c
+void timer_pause(void);
+void timer_unpause(void);
+double get_timer_seconds(void);
 
 // main.c
 extern SDL_Renderer* renderer;
