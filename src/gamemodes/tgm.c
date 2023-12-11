@@ -395,7 +395,7 @@ const Gamemode tap_death_mode = {
 };
 
 const Menu tgm_menu = {
-    .menu_items = (MenuItem[4]) {
+    .menu_items = (MenuItem[]) {
         BUTTON_LOAD_GAMEMODE("TGM1", tgm1_mode),
         BUTTON_LOAD_GAMEMODE("TAP Master", tap_master_mode),
         BUTTON_LOAD_GAMEMODE("TAP TGM+", tap_tgmplus_mode),

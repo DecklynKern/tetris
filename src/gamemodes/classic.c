@@ -17,7 +17,7 @@ static Uint8 total_pieces = 0;
 static Uint8 last_spawned_mino_id = 0;
 static Uint16 rng_seed = 0x8988;
 
-static void init(void) {
+static void nes_init(void) {
     
     level = start_level;
 
@@ -33,6 +33,20 @@ static void init(void) {
     state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
     update_colours();
 
+}
+
+static void nes_type_b_init(void) {
+
+    nes_init();
+
+    for (int y = 0; y < 10; y++) {
+        for (int x = 0; x < 10; x++) {
+
+            if (rand() % 2) {
+                state.board.minos[BOARD_HEIGHT - y - 1][x] = Garbage;
+            }
+        }
+    }
 }
 
 static void on_line_clear(int num_lines) {
@@ -132,30 +146,45 @@ static void draw(void) {
 
 }
 
-const Gamemode nes_mode = {
-
-    .line_clear_delay = 18, // 17-20 depending on internal frame counter???
-    .are_delay = 10, // 10-18 depending on height at lock
-    .lock_delay = 0,
-    .das_delay = 16,
-    .arr_delay = 6,
-    .gravity = 1,
-
-    .show_ghost = false,
-    .can_hold = false,
-    .lock_on_down_held = false,
-    .irs = false,
-    .instant_drop_type = Drop_NoInstant,
-    .socd_allow_das_overwrite = SOCD_Right,
-    .num_kicks = 0,
-    .piece_rot_minos = &nrs_right_handed_minos,
-    .piece_colours = (Uint32 (*const)[]) &piece_colours,
-
-    .init = init,
-    .on_line_clear = on_line_clear,
-    .generate_new_piece = new_piece,
-    .update = nes_update,
+// line clear delay 17-20 depending on internal frame counter???
+// are delay 10-18 depending on height at lock?
+#define NES_SETTINGS \
+    \
+    .line_clear_delay = 18, \
+    .are_delay = 10, \
+    .lock_delay = 0, \
+    .das_delay = 16, \
+    .arr_delay = 6, \
+    .gravity = 1, \
+    \
+    .show_ghost = false, \
+    .can_hold = false, \
+    .lock_on_down_held = false, \
+    .irs = false, \
+    .instant_drop_type = Drop_NoInstant, \
+    .socd_allow_das_overwrite = SOCD_Right, \
+    .num_kicks = 0, \
+    .piece_rot_minos = &nrs_right_handed_minos, \
+    .piece_colours = (Uint32 (*const)[]) &piece_colours, \
+    \
+    .on_line_clear = on_line_clear, \
+    .generate_new_piece = new_piece, \
+    .update = nes_update, \
     .draw = draw
+
+const Gamemode nes_type_a_mode = {
+
+    NES_SETTINGS,
+
+    .init = nes_init,
+
+};
+
+const Gamemode nes_type_b_mode = {
+
+    NES_SETTINGS,
+
+    .init = nes_type_b_init,
 
 };
 
@@ -181,9 +210,11 @@ const Gamemode nes_mode = {
 // };
 
 const Menu nes_menu = {
-    .menu_items = (MenuItem[2]) {
+    .menu_items = (MenuItem[]) {
         NUM_BOX("Start Level:", 0, 19, start_level),
-        BUTTON_LOAD_GAMEMODE("Start", nes_mode),
+        SEPARATOR,
+        BUTTON_LOAD_GAMEMODE("Start Type A", nes_type_a_mode),
+        BUTTON_LOAD_GAMEMODE("Start Type B", nes_type_b_mode)
     },
-    .menu_item_count = 2
+    .menu_item_count = 4
 };

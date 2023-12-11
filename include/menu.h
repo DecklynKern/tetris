@@ -50,6 +50,10 @@
     }} \
 }
 
+#define SEPARATOR { \
+    .menu_item_type = MenuItemType_Separator \
+}
+
 struct Menu;
 typedef struct Menu Menu;
 typedef struct {
@@ -73,12 +77,15 @@ typedef struct {
     int* val;
 } NumBox;
 
+typedef enum {
+    MenuItemType_Label,
+    MenuItemType_Button,
+    MenuItemType_NumBox,
+    MenuItemType_Separator
+} MenuItemType;
+
 typedef struct {
-    enum {
-        MenuItemType_Label,
-        MenuItemType_Button,
-        MenuItemType_NumBox
-    } menu_item_type;
+    MenuItemType menu_item_type;
     union {
         char* label;
         Button button;

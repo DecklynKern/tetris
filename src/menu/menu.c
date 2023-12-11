@@ -1,3 +1,4 @@
+#include <SDL2/SDL_render.h>
 #include <SDL2/SDL_scancode.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,13 +10,14 @@ const Menu* current_menu = NULL;
 int selected_menu_item = 0;
 
 const Menu main_menu = {
-    .menu_items = (MenuItem[4]) {
+    .menu_items = (MenuItem[]) {
         LABEL("Select Game"),
+        SEPARATOR,
         BUTTON_NEW_MENU("NES", nes_menu),
         BUTTON_NEW_MENU("TGM", tgm_menu),
         BUTTON_LOAD_GAMEMODE("Modern", modern_mode)
     },
-    .menu_item_count = 4
+    .menu_item_count = 5
 };
 
 static void unpause(void) {
@@ -24,18 +26,29 @@ static void unpause(void) {
 }
 
 const Menu pause_menu = {
-    .menu_items = (MenuItem[3]) {
+    .menu_items = (MenuItem[]) {
         LABEL("PAUSED"),
+        SEPARATOR,
         BUTTON_FUNC("Resume", unpause),
         BUTTON_NEW_MENU("Main Menu", main_menu)
     },
-    .menu_item_count = 3
+    .menu_item_count = 4
 };
+
+static bool item_selectable(MenuItemType type) {
+    switch (type) {
+        case MenuItemType_Label:
+        case MenuItemType_Separator:
+            return false;
+        default:
+            return true;
+    }
+}
 
 void load_menu(const Menu *menu) {
     
     for (int i = 0; i < menu->menu_item_count; i++) {
-        if (menu->menu_items[i].menu_item_type != MenuItemType_Label) {
+        if (item_selectable(current_menu->menu_items[i].menu_item_type)) {
             selected_menu_item = i;
             break;
         }
@@ -48,7 +61,7 @@ void load_menu(const Menu *menu) {
 void menu_move_up(void) {
     
     for (int i = selected_menu_item - 1; i >= 0; i--) {
-        if (current_menu->menu_items[i].menu_item_type != MenuItemType_Label) {
+        if (item_selectable(current_menu->menu_items[i].menu_item_type)) {
             selected_menu_item = i;
             break;
         }
@@ -58,7 +71,7 @@ void menu_move_up(void) {
 void menu_move_down(void) {
     
     for (int i = selected_menu_item + 1; i < current_menu->menu_item_count; i++) {
-        if (current_menu->menu_items[i].menu_item_type != MenuItemType_Label) {
+        if (item_selectable(current_menu->menu_items[i].menu_item_type)) {
             selected_menu_item = i;
             break;
         }
@@ -86,11 +99,10 @@ void button_press(Button* button) {
 void menu_select(void) {
     
     switch (current_menu->menu_items[selected_menu_item].menu_item_type) {
-        case MenuItemType_Label:
-        case MenuItemType_NumBox:
-            break;
         case MenuItemType_Button:
             button_press(&current_menu->menu_items[selected_menu_item].menu_item.button);
+            break;
+        default:
             break;
     }
 }
@@ -100,9 +112,6 @@ void menu_handle_key(SDL_Scancode scancode) {
     MenuItem* menu_item = &current_menu->menu_items[selected_menu_item];
     
     switch (menu_item->menu_item_type) {
-        case MenuItemType_Label:
-        case MenuItemType_Button:
-            break;
         case MenuItemType_NumBox:
             
             if (scancode == SDL_SCANCODE_MINUS) {
@@ -118,6 +127,9 @@ void menu_handle_key(SDL_Scancode scancode) {
                 }
             }
             
+            break;
+
+        default:
             break;
             
     }
@@ -142,7 +154,7 @@ void draw_menu() {
             
             SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
             SDL_RenderDrawRect(renderer, &rect);
-                
+            
         }
         
         switch (current_menu->menu_items[i].menu_item_type) {
@@ -164,6 +176,10 @@ void draw_menu() {
                 break;
                 
             }
+            case MenuItemType_Separator:
+                SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
+                SDL_RenderDrawLine(renderer, 0, y + LARGE_FONT_SIZE / 2, SCREEN_WIDTH, y + LARGE_FONT_SIZE / 2);
+                break;
         }
     }
 }
