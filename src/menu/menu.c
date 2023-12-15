@@ -15,7 +15,7 @@ const Menu main_menu = {
         SEPARATOR,
         BUTTON_NEW_MENU("NES", nes_menu),
         BUTTON_NEW_MENU("TGM", tgm_menu),
-        BUTTON_LOAD_GAMEMODE("Modern", modern_mode)
+        BUTTON_NEW_MENU("Modern", modern_menu)
     },
     .menu_item_count = 5
 };
@@ -47,15 +47,14 @@ static bool item_selectable(MenuItemType type) {
 
 void load_menu(const Menu *menu) {
     
+    current_menu = menu;
+    
     for (int i = 0; i < menu->menu_item_count; i++) {
         if (item_selectable(current_menu->menu_items[i].menu_item_type)) {
             selected_menu_item = i;
             break;
         }
     }
-    
-    current_menu = menu;
-    
 }
 
 void menu_move_up(void) {
@@ -166,7 +165,6 @@ void draw_menu() {
                 break;
             case MenuItemType_NumBox:
             {
-                
                 char num_text[10];
                 sprintf(num_text, "%d", *current_menu->menu_items[i].menu_item.num_box.val);
                 
@@ -174,7 +172,6 @@ void draw_menu() {
                 draw_large_text(SCALE * 8, y, num_text);
                 
                 break;
-                
             }
             case MenuItemType_Separator:
                 SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);

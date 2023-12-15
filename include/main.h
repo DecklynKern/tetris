@@ -41,8 +41,8 @@ typedef enum {
     Input_Right,
     Input_Down,
     Input_InstantDrop,
-    Input_Rot_CW,
     Input_Rot_CCW,
+    Input_Rot_CW,
     Input_Hold,
     NUM_HOLDABLE_KEYS
 } Inputs;
@@ -53,15 +53,15 @@ typedef struct {
 } Point;
 
 typedef enum {
-    Empty = 0,
-    O,
-    S,
-    Z,
-    L,
-    J,
-    T,
-    I,
-    Garbage
+    Piece_Empty = 0,
+    Piece_O,
+    Piece_S,
+    Piece_Z,
+    Piece_L,
+    Piece_J,
+    Piece_T,
+    Piece_I,
+    Piece_Garbage
 } MinoType;
 
 typedef enum {
@@ -148,6 +148,7 @@ struct GameData {
 
     bool input_held[NUM_HOLDABLE_KEYS];
 
+    bool quit_to_main_menu;
     long timer_ms;
 
     int line_clear_timer;
@@ -176,7 +177,7 @@ void release_down(void);
 
 void game_init(void);
 const Point* get_piece_minos(void);
-bool update(void);
+void update(void);
 
 // draw.c
 void init_fonts();
@@ -188,8 +189,9 @@ void draw_large_text(int x, int y, const char* text);
 void draw_info_value(int row, const char* format, int value);
 void draw_info_text(int row, const char* format, const char* text);
 void draw_info_timer(int row);
+void draw_piece_north(MinoType type, int offset_x, int offset_y);
 void draw_board(void);
-void draw_single_next(MinoType next);
+void draw_next(MinoType* next, int piece_count);
 
 // timer.c
 void timer_pause(void);

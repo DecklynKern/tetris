@@ -113,11 +113,11 @@ static void tick(void) {
             else if (event.key.keysym.scancode == mapped_keys[Input_InstantDrop]) {
                 input_instant_drop();
             }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CW]) {
-                input_rotate_cw();
-            }
             else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CCW]) {
                 input_rotate_ccw();
+            }
+            else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CW]) {
+                input_rotate_cw();
             }
             else if (event.key.keysym.scancode == mapped_keys[Input_Hold]) {
                 input_hold();
@@ -150,8 +150,10 @@ static void tick(void) {
     if (in_game()) {
 
         state.timer_ms = get_timer_seconds() * 1000;
+
+        update();
         
-        if (update()) {
+        if (state.quit_to_main_menu) {
             load_menu(&main_menu);
         }
     }

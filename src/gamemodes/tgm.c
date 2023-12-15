@@ -40,7 +40,7 @@ static int tgmplus_garbage_row = 0;
 
 static void tgm1_init(void) {
 
-    history[0] = history[1] = history[2] = history[3] = Z;
+    history[0] = history[1] = history[2] = history[3] = Piece_Z;
 
     next_piece = rand() % 4 + 4;
     history[0] = next_piece;
@@ -51,8 +51,8 @@ static void tgm1_init(void) {
 
 static void tap_init(void) {
 
-    history[0] = history[3] = Z;
-    history[1] = history[2] = S;
+    history[0] = history[3] = Piece_Z;
+    history[1] = history[2] = Piece_S;
 
     next_piece = rand() % 4 + 4;
     history[0] = next_piece;
@@ -68,11 +68,11 @@ static void tap_master_init(void) {
 
 static Point get_kick(Rotation new_rotation, int attempt) {
 
-    if (state.piece.type == I) {
+    if (state.piece.type == Piece_I) {
         return (Point){0, 0};
     }
 
-    if (state.piece.type == L || state.piece.type == J || state.piece.type == T) {
+    if (state.piece.type == Piece_L || state.piece.type == Piece_J || state.piece.type == Piece_T) {
 
         for (int dy = -1; dy < 2; dy++) {
             for (int dx = -1; dx < 2; dx++) {
@@ -121,7 +121,7 @@ static void tap_tgmplus_on_lock(bool cleared_lines) {
             }
 
             for (int x = 0; x < BOARD_WIDTH; x++) {
-                state.board.minos[BOARD_HEIGHT - 1][x] = tgmplus_garbage_rows[tgmplus_garbage_row][x] ? Garbage : Empty;
+                state.board.minos[BOARD_HEIGHT - 1][x] = tgmplus_garbage_rows[tgmplus_garbage_row][x] ? Piece_Garbage : Piece_Empty;
             }
         
             tgmplus_garbage_counter = 0;
@@ -285,7 +285,7 @@ static void tap_master_update(void) {
 static void draw(void) {
 
     draw_board();
-    draw_single_next(next_piece);
+    draw_next(&next_piece, 1);
 
     draw_info_text(0, "Grade: %s", grade);
     draw_info_value(1, "Score: %d", score);

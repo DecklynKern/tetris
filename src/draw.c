@@ -91,19 +91,30 @@ void draw_large_text(int x, int y, const char* text) {
 void draw_info_value(int row, const char* format, int value) {
     char text[20];
     sprintf(text, format, value);
-    draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, text);
+    draw_small_text(BOARD_WIDTH * SCALE, 20 + row * 15, text);
 }
 
 void draw_info_text(int row, const char* format, const char* text) {
     char final_text[20];
     sprintf(final_text, format, text);
-    draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, final_text);
+    draw_small_text(BOARD_WIDTH * SCALE, 20 + row * 15, final_text);
 }
 
 void draw_info_timer(int row) {
     char text[30];
     sprintf(text, "%02ld:%02ld.%03ld", state.timer_ms / 60000, state.timer_ms / 1000 % 60, state.timer_ms % 1000);
-    draw_small_text(BOARD_WIDTH * SCALE, 100 + row * 15, text);
+    draw_small_text(BOARD_WIDTH * SCALE, 20 + row * 15, text);
+}
+
+void draw_piece_north(MinoType type, int offset_x, int offset_y) {
+
+    for (int i = 0; i < PIECE_MINO_COUNT; i++) {
+        draw_mino(
+            (*state.gamemode.piece_rot_minos)[type - 1][Rot_N][i].x + offset_x,
+            (*state.gamemode.piece_rot_minos)[type - 1][Rot_N][i].y + INVISIBLE_ROWS + offset_y,
+            type
+        );
+    }
 }
 
 void draw_board(void) {
@@ -114,7 +125,11 @@ void draw_board(void) {
         }
     }
 
-    if (state.line_clear_timer || state.are_timer) {
+    if (state.held_piece != Piece_Empty) {
+        draw_piece_north(state.held_piece, 1, -3);
+    }
+
+    if (state.line_clear_timer != -1 || state.are_timer != -1) {
         return;
     }
         
@@ -147,13 +162,9 @@ void draw_board(void) {
     }
 }
 
-void draw_single_next(MinoType next) {
+void draw_next(MinoType* next, int piece_count) {
 
-    for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        draw_mino(
-            (*state.gamemode.piece_rot_minos)[next - 1][Rot_N][i].x + 4,
-            (*state.gamemode.piece_rot_minos)[next - 1][Rot_N][i].y + INVISIBLE_ROWS - 3,
-            next
-        );
+    for (int i = 0; i < piece_count; i++) {
+        draw_piece_north(next[i], 12, 4 * i - 2);
     }
 }

@@ -43,7 +43,7 @@ static void nes_type_b_init(void) {
         for (int x = 0; x < 10; x++) {
 
             if (rand() % 2) {
-                state.board.minos[BOARD_HEIGHT - y - 1][x] = Garbage;
+                state.board.minos[BOARD_HEIGHT - y - 1][x] = Piece_Garbage;
             }
         }
     }
@@ -122,13 +122,13 @@ static MinoType new_piece(void) {
 }
 
 static void update_colours(void) {
-    piece_colours[T] = nes_colour_palette[nes_level_colours[level][1]];
-    piece_colours[J] = nes_colour_palette[nes_level_colours[level][2]];
-    piece_colours[Z] = nes_colour_palette[nes_level_colours[level][3]];
-    piece_colours[O] = nes_colour_palette[nes_level_colours[level][1]];
-    piece_colours[S] = nes_colour_palette[nes_level_colours[level][2]];
-    piece_colours[L] = nes_colour_palette[nes_level_colours[level][3]];
-    piece_colours[I] = nes_colour_palette[nes_level_colours[level][1]];
+    piece_colours[Piece_T] = nes_colour_palette[nes_level_colours[level][1]];
+    piece_colours[Piece_J] = nes_colour_palette[nes_level_colours[level][2]];
+    piece_colours[Piece_Z] = nes_colour_palette[nes_level_colours[level][3]];
+    piece_colours[Piece_O] = nes_colour_palette[nes_level_colours[level][1]];
+    piece_colours[Piece_S] = nes_colour_palette[nes_level_colours[level][2]];
+    piece_colours[Piece_L] = nes_colour_palette[nes_level_colours[level][3]];
+    piece_colours[Piece_I] = nes_colour_palette[nes_level_colours[level][1]];
 }
 
 static void nes_update(void) {
@@ -138,7 +138,7 @@ static void nes_update(void) {
 static void draw(void) {
 
     draw_board();
-    draw_single_next(next_piece);
+    draw_next(&next_piece, 1);
 
     draw_info_value(0, "Level: %d", level);
     draw_info_value(1, "Lines: %d", lines);

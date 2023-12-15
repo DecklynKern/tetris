@@ -8,4 +8,4 @@ extern const Menu nes_menu;
 extern const Menu tgm_menu;
 
 // modern.c
-extern const Gamemode modern_mode;
+extern const Menu modern_menu;
