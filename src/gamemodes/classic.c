@@ -7,19 +7,24 @@
 // https://meatfighter.com/nintendotetrisai/?a=b#The_Mechanics_of_Nintendo_Tetris
 
 static int start_level = 0;
-static int level = 0;
-static int lines = 0;
-static int score = 0;
+static int level;
+static int lines;
+static int score;
 
 static MinoType next_piece;
 
-static Uint8 total_pieces = 0;
-static Uint8 last_spawned_mino_id = 0;
-static Uint16 rng_seed = 0x8988;
+static Uint8 total_pieces;
+static Uint8 last_spawned_mino_id;
+static Uint16 rng_seed;
 
 static void nes_init(void) {
     
     level = start_level;
+    lines = 0;
+    score = 0;
+    total_pieces = 0;
+    last_spawned_mino_id = 0;
+    rng_seed = 0x8988;
 
     // simulate random number of frames since game was turned on
     int num_frames = rand() % 100;
@@ -146,6 +151,12 @@ static void draw(void) {
 
 }
 
+static void nes_type_a_on_exit(void) {
+    sprintf(state.result.line1, "Score: %d", score);
+    sprintf(state.result.line2, "Level: %d", level);
+    sprintf(state.result.line3, "Lines: %d", lines);
+}
+
 // line clear delay 17-20 depending on internal frame counter???
 // are delay 10-18 depending on height at lock?
 #define NES_SETTINGS \
@@ -177,6 +188,7 @@ const Gamemode nes_type_a_mode = {
     NES_SETTINGS,
 
     .init = nes_init,
+    .on_exit = nes_type_a_on_exit
 
 };
 
@@ -185,6 +197,8 @@ const Gamemode nes_type_b_mode = {
     NES_SETTINGS,
 
     .init = nes_type_b_init,
+    // fix
+    .on_exit = nes_type_a_on_exit
 
 };
 
@@ -209,12 +223,9 @@ const Gamemode nes_type_b_mode = {
 
 // };
 
-const Menu nes_menu = {
-    .menu_items = (MenuItem[]) {
-        NUM_BOX("Start Level:", 0, 19, start_level),
-        SEPARATOR,
-        BUTTON_LOAD_GAMEMODE("Start Type A", nes_type_a_mode),
-        BUTTON_LOAD_GAMEMODE("Start Type B", nes_type_b_mode)
-    },
-    .menu_item_count = 4
-};
+const Menu nes_menu = MENU(
+    NUM_BOX("Start Level:", 0, 19, start_level),
+    SEPARATOR,
+    BUTTON_LOAD_GAMEMODE("Start Type A", nes_type_a_mode),
+    BUTTON_LOAD_GAMEMODE("Start Type B", nes_type_b_mode)
+);

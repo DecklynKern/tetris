@@ -154,7 +154,14 @@ static void tick(void) {
         update();
         
         if (state.quit_to_main_menu) {
-            load_menu(&main_menu);
+            
+            memset(state.result.line1, 0, sizeof(state.result.line1));
+            memset(state.result.line2, 0, sizeof(state.result.line2));
+            memset(state.result.line3, 0, sizeof(state.result.line3));
+            
+            state.gamemode.on_exit();
+            load_menu(&results_menu);
+            
         }
     }
 

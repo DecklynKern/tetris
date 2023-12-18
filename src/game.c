@@ -2,6 +2,16 @@
 #include <string.h>
 
 #include "../include/main.h"
+        
+static int das_timer;
+static int das_direction;
+static bool in_lock_delay;
+static int lock_delay_timer;
+static int gravity_count;
+static bool down_held;
+
+static int line_clear_timer;
+static int are_timer;
 
 bool board_is_clear(void) {
 
@@ -15,6 +25,10 @@ bool board_is_clear(void) {
             
     return true;
     
+}
+
+bool piece_active() {
+    return state.line_clear_timer != -1 || state.are_timer != -1;
 }
 
 bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
@@ -74,7 +88,7 @@ static void lock_piece(void) {
         }
     }
 
-    state.movement.in_lock_delay = false;
+    in_lock_delay = false;
 
     if (state.gamemode.on_lock) {
         state.gamemode.on_lock((bool)lines_cleared);
@@ -126,7 +140,7 @@ static void try_rotate(int rotation_amount) {
     state.piece.x += kick.x;
     state.piece.y += kick.y;
     state.piece.rotation = new_rotation;
-    state.movement.lock_delay_timer = state.gamemode.lock_delay;
+    lock_delay_timer = state.gamemode.lock_delay;
 
 }
 
@@ -136,7 +150,7 @@ static void reset_position(void) {
     state.piece.y = INVISIBLE_ROWS;
     state.piece.rotation = Rot_N;
 
-    state.movement.lock_delay_timer = state.gamemode.lock_delay;
+    lock_delay_timer = state.gamemode.lock_delay;
 
 }
 
@@ -168,7 +182,7 @@ static void new_piece(void) {
 
 void input_left(void) {
 
-    if (state.movement.das_direction == 1 && !(state.gamemode.socd_allow_das_overwrite & SOCD_Left)) {
+    if (das_direction == 1 && !(state.gamemode.socd_allow_das_overwrite & SOCD_Left)) {
         return;
     }
 
@@ -176,28 +190,28 @@ void input_left(void) {
         try_move(-1, 0);
     }
 
-    state.movement.das_timer = state.gamemode.das_delay;
-    state.movement.das_direction = -1;
+    das_timer = state.gamemode.das_delay;
+    das_direction = -1;
 
 }
 
 void input_right(void) {
 
-    if (state.movement.das_direction == -1 && !(state.gamemode.socd_allow_das_overwrite & SOCD_Right)) {
+    if (das_direction == -1 && !(state.gamemode.socd_allow_das_overwrite & SOCD_Right)) {
         return;
     }
 
-    if (state.line_clear_timer == -1 && state.are_timer == -1) {
+    if (line_clear_timer == -1 && are_timer == -1) {
         try_move(1, 0);
     }
 
-    state.movement.das_timer = state.gamemode.das_delay;
-    state.movement.das_direction = 1;
+    das_timer = state.gamemode.das_delay;
+    das_direction = 1;
     
 }
 
 void input_down(void) {
-    state.movement.down_held = true;
+    down_held = true;
 }
 
 void input_instant_drop(void) {
@@ -251,11 +265,9 @@ void input_hold(void) {
 
 void release_left(void) {
 
-    if (state.movement.das_direction == -1) {
-
-        state.movement.das_direction = 0;
-        state.movement.das_timer = -1;
-    
+    if (das_direction == -1) {
+        das_direction = 0;
+        das_timer = -1;
     }
 
     if (state.input_held[Input_Right]) {
@@ -265,11 +277,9 @@ void release_left(void) {
 
 void release_right(void) {
 
-    if (state.movement.das_direction == 1) {
-
-        state.movement.das_direction = 0;
-        state.movement.das_timer = -1;
-    
+    if (das_direction == 1) {
+        das_direction = 0;
+        das_timer = -1;
     }
 
     if (state.input_held[Input_Left]) {
@@ -278,18 +288,18 @@ void release_right(void) {
 }
 
 void release_down(void) {
-    state.movement.down_held = false;
+    down_held = false;
 }
 
 void game_init(void) {
 
     memset(state.board.minos, Piece_Empty, sizeof(state.board.minos));
 
-    state.movement.das_timer = -1;
-    state.movement.das_direction = 0;
-    state.movement.in_lock_delay = false;
-    state.movement.gravity_count = 0;
-    state.movement.down_held = false;
+    das_timer = -1;
+    das_direction = 0;
+    in_lock_delay = false;
+    gravity_count = 0;
+    down_held = false;
     
     state.quit_to_main_menu = false;
     state.held_piece = Piece_Empty;
@@ -310,23 +320,23 @@ void update(void) {
     //TODO: add nes not allowing down + shift
 
     // technically missing das change restrictions in tgm
-    if (state.movement.das_timer > 0) {
-        state.movement.das_timer--;
+    if (das_timer > 0) {
+        das_timer--;
     }
-    else while (state.movement.das_timer == 0) {
+    else while (das_timer == 0) {
         
-        state.movement.das_timer = state.gamemode.arr_delay;
+        das_timer = state.gamemode.arr_delay;
     
-        if (!try_move(state.movement.das_direction, 0)) {
+        if (!try_move(das_direction, 0)) {
             break;
         }
     }
 
-    if (state.are_timer != -1) {
+    if (are_timer != -1) {
 
-        state.are_timer--;
+        are_timer--;
 
-        if (state.are_timer == -1) {
+        if (are_timer == -1) {
 
             new_piece();
 
@@ -340,35 +350,35 @@ void update(void) {
 
     }
 
-    if (state.line_clear_timer != -1) {
+    if (line_clear_timer != -1) {
 
-        state.line_clear_timer--;
+        line_clear_timer--;
 
-        if (state.line_clear_timer == -1) {
-            state.are_timer = state.gamemode.are_delay;
+        if (line_clear_timer == -1) {
+            are_timer = state.gamemode.are_delay;
         }
 
         return;
 
     }
 
-    if (state.movement.down_held) {
-        state.movement.gravity_count += state.gamemode.soft_drop_factor;
+    if (down_held) {
+        gravity_count += state.gamemode.soft_drop_factor;
     }
 
-    state.movement.gravity_count += state.gamemode.gravity;
+    gravity_count += state.gamemode.gravity;
 
-    while (state.movement.gravity_count > state.gamemode.gravity_factor) {
+    while (gravity_count > state.gamemode.gravity_factor) {
 
-        state.movement.gravity_count -= state.gamemode.gravity_factor;
+        gravity_count -= state.gamemode.gravity_factor;
 
         if (try_move(0, 1)) {
             continue;
         }
 
-        if (!state.movement.in_lock_delay) {
-            state.movement.in_lock_delay = true;
-            state.movement.lock_delay_timer = state.gamemode.lock_delay;
+        if (!in_lock_delay) {
+            in_lock_delay = true;
+            lock_delay_timer = state.gamemode.lock_delay;
         }
 
         break;
@@ -376,18 +386,18 @@ void update(void) {
     }
 
     if (placement_valid(get_piece_minos(), state.piece.x, state.piece.y + 1)) {
-        state.movement.in_lock_delay = false;
-        state.movement.lock_delay_timer = state.gamemode.lock_delay;
+        in_lock_delay = false;
+        lock_delay_timer = state.gamemode.lock_delay;
     }
-    else if (state.movement.in_lock_delay) {
+    else if (in_lock_delay) {
 
-        state.movement.gravity_count = 0;
+        gravity_count = 0;
 
-        if (!state.movement.lock_delay_timer || (state.movement.down_held && state.gamemode.lock_on_down_held)) {
+        if (!lock_delay_timer || (down_held && state.gamemode.lock_on_down_held)) {
             lock_piece();
         }
         else {
-            state.movement.lock_delay_timer--;
+            lock_delay_timer--;
         }
     }
 

@@ -1,5 +1,10 @@
 #include "main.h"
 
+#define MENU(...) { \
+    .menu_items = (MenuItem[]) {__VA_ARGS__}, \
+    .menu_item_count = sizeof((MenuItem[]) {__VA_ARGS__}) / sizeof(MenuItem) \
+}
+
 #define LABEL(label_text) { \
     .menu_item_type = MenuItemType_Label, \
     .menu_item = { \
@@ -103,6 +108,7 @@ extern int selected_menu_item;
 
 // menu.c
 extern const Menu main_menu;
+extern const Menu results_menu;
 extern const Menu pause_menu;
 
 void load_menu(const Menu* menu);

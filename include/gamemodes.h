@@ -1,5 +1,7 @@
-#include "main.h"
 #include "menu.h"
+
+// gamemode.c
+void load_gamemode(const Gamemode* gamemode);
 
 // classic.c
 extern const Menu nes_menu;

@@ -4,36 +4,44 @@
 #include <string.h>
 #include <math.h>
 
+#include "../../include/main.h"
 #include "../../include/gamemodes.h"
 
 const Menu* current_menu = NULL;
 int selected_menu_item = 0;
 
-const Menu main_menu = {
-    .menu_items = (MenuItem[]) {
-        LABEL("Select Game"),
-        SEPARATOR,
-        BUTTON_NEW_MENU("NES", nes_menu),
-        BUTTON_NEW_MENU("TGM", tgm_menu),
-        BUTTON_NEW_MENU("Modern", modern_menu)
-    },
-    .menu_item_count = 5
-};
+const Menu main_menu = MENU(
+    LABEL("Select Game"),
+    SEPARATOR,
+    BUTTON_NEW_MENU("NES", nes_menu),
+    BUTTON_NEW_MENU("TGM", tgm_menu),
+    BUTTON_NEW_MENU("Modern", modern_menu)
+);
+
+static void retry(void) {
+    load_gamemode(state.gamemode_ref);
+}
+
+Menu results_menu = MENU(
+    LABEL(state.result.line1),
+    LABEL(state.result.line2),
+    LABEL(state.result.line3),
+    SEPARATOR,
+    BUTTON_FUNC("Retry", retry),
+    BUTTON_NEW_MENU("Main Menu", main_menu)
+);
 
 static void unpause(void) {
     current_menu = NULL;
     timer_unpause();
 }
 
-const Menu pause_menu = {
-    .menu_items = (MenuItem[]) {
-        LABEL("PAUSED"),
-        SEPARATOR,
-        BUTTON_FUNC("Resume", unpause),
-        BUTTON_NEW_MENU("Main Menu", main_menu)
-    },
-    .menu_item_count = 4
-};
+const Menu pause_menu = MENU(
+    LABEL("PAUSED"),
+    SEPARATOR,
+    BUTTON_FUNC("Resume", unpause),
+    BUTTON_NEW_MENU("Main Menu", main_menu)
+);
 
 static bool item_selectable(MenuItemType type) {
     switch (type) {
@@ -87,10 +95,7 @@ void button_press(Button* button) {
             load_menu(button->action.new_menu);
             break;
         case ActionType_LoadGamemode:
-            memcpy(&state.gamemode, button->action.load_gamemode, sizeof(Gamemode));
-            state.gamemode.init();
-            game_init();
-            load_menu(&pause_menu);
+            load_gamemode(button->action.load_gamemode);
             break;
     }
 }

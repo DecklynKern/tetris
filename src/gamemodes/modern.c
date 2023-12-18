@@ -167,7 +167,7 @@ static void sprint_update(void) {
 }
 
 static void marathon_update(void) {
-    state.quit_to_main_menu = lines_cleared >= 100;
+    state.quit_to_main_menu = lines_cleared >= 150;
 }
 
 static MinoType generate_new_piece(void) {
@@ -197,6 +197,24 @@ static void sprint_draw(void) {
     draw();
     draw_info_timer(0);
     draw_info_value(1, "lines %d", lines_cleared);
+}
+
+static void no_result_on_exit(void) {
+}
+
+static void speed_on_exit(int target_lines) {
+    
+    sprintf(state.result.line1, (lines_cleared > target_lines) ? "Success" : "Fail");
+    sprintf(state.result.line2, "Time: %");
+    
+}
+
+static void sprint_on_exit(void) {
+    speed_on_exit(40);
+}
+
+static void marathon_on_exit(void) {
+    speed_on_exit(150);
 }
 
 #define MODERN_SETTINGS \
@@ -229,7 +247,8 @@ static const Gamemode ppt1_mode = {
     .gravity = 4,
     .gravity_factor = 256,
 
-    .draw = draw
+    .draw = draw,
+    .on_exit = no_result_on_exit
 
 };
 
@@ -247,7 +266,8 @@ static const Gamemode fast_sprint_mode = {
     .gravity_factor = 256,
 
     .update = sprint_update,
-    .draw = sprint_draw
+    .draw = sprint_draw,
+    .on_exit = sprint_on_exit
 
 };
 
@@ -265,15 +285,13 @@ static const Gamemode fast_marathon_mode = {
     .gravity_factor = 256,
 
     .update = marathon_update,
-    .draw = sprint_draw
+    .draw = sprint_draw,
+    .on_exit = marathon_on_exit
 
 };
 
-const Menu modern_menu = {
-    .menu_items = (MenuItem[]) {
-        BUTTON_LOAD_GAMEMODE("PPT 1", ppt1_mode),
-        BUTTON_LOAD_GAMEMODE("Fast Sprint", fast_sprint_mode),
-        BUTTON_LOAD_GAMEMODE("Fast Sprint", fast_marathon_mode)
-    },
-    .menu_item_count = 2
-};
+const Menu modern_menu = MENU(
+    BUTTON_LOAD_GAMEMODE("PPT 1", ppt1_mode),
+    BUTTON_LOAD_GAMEMODE("Fast Sprint", fast_sprint_mode),
+    BUTTON_LOAD_GAMEMODE("Fast Marathon", fast_marathon_mode)
+);

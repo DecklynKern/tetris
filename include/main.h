@@ -33,9 +33,6 @@
 #define RGB(r, g, b) (Uint32)((r) << 24 | (g) << 16 | (b) << 8 | 0xFF)
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-#define NUM_GAMEMODES 6
-extern const char* gamemode_names[NUM_GAMEMODES];
-
 typedef enum {
     Input_Left = 0,
     Input_Right,
@@ -85,15 +82,6 @@ typedef enum {
 } SOCD_Direction;
 
 typedef struct {
-    int das_timer;
-    int das_direction;
-    bool in_lock_delay;
-    int lock_delay_timer;
-    int gravity_count;
-    bool down_held;
-} MovementData;
-
-typedef struct {
     MinoType type;
     int x;
     int y;
@@ -136,23 +124,28 @@ typedef struct {
     MinoType (*const generate_new_piece)(void);
     void (*const update)(void);
     void (*const draw)(void);
+    void (*const on_exit)(void);
 
 } Gamemode;
 
 struct GameData {
 
     Piece piece;
-    MovementData movement;
+    
+    struct {
+        char line1[64];
+        char line2[64];
+        char line3[64];
+    } result;
+    
     Board board;
     Gamemode gamemode;
+    const Gamemode* gamemode_ref;
 
     bool input_held[NUM_HOLDABLE_KEYS];
 
     bool quit_to_main_menu;
     long timer_ms;
-
-    int line_clear_timer;
-    int are_timer;
 
     MinoType held_piece;
     bool has_held;
@@ -161,6 +154,7 @@ struct GameData {
 
 // game.c
 bool board_is_clear(void);
+bool piece_active(void);
 bool placement_valid(const Point* piece_minos, int piece_x, int piece_y);
 
 void input_left(void);
@@ -197,6 +191,8 @@ void draw_next(MinoType* next, int piece_count);
 void timer_pause(void);
 void timer_unpause(void);
 double get_timer_seconds(void);
+long get_timer_ms(void);
+void get_timer_formatted(char* buf);
 
 // main.c
 extern SDL_Renderer* renderer;

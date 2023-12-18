@@ -102,7 +102,7 @@ void draw_info_text(int row, const char* format, const char* text) {
 
 void draw_info_timer(int row) {
     char text[30];
-    sprintf(text, "%02ld:%02ld.%03ld", state.timer_ms / 60000, state.timer_ms / 1000 % 60, state.timer_ms % 1000);
+    get_timer_formatted(text);
     draw_small_text(BOARD_WIDTH * SCALE, 20 + row * 15, text);
 }
 
@@ -129,7 +129,7 @@ void draw_board(void) {
         draw_piece_north(state.held_piece, 1, -3);
     }
 
-    if (state.line_clear_timer != -1 || state.are_timer != -1) {
+    if (piece_active()) {
         return;
     }
         
