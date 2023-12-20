@@ -24,6 +24,10 @@ void timer_unpause(void) {
     gettimeofday(&last_unpause_time, NULL);
 }
 
+void timer_reset(void) {
+    timer_seconds_before_last_pause = 0;
+}
+
 double get_timer_seconds(void) {
     return timer_seconds_before_last_pause + seconds_since_last_unpause();
 }
@@ -32,7 +36,7 @@ long get_timer_ms(void) {
     return get_timer_seconds() * 1000;
 }
 
-void get_time_formatted(char* buf) {
+void get_timer_formatted(char* buf) {
     long timer_ms = get_timer_ms();
     sprintf(buf, "%02ld:%02ld.%03ld", timer_ms / 60000, timer_ms / 1000 % 60, timer_ms % 1000);
 }

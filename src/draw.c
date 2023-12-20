@@ -1,5 +1,4 @@
 #include <SDL2/SDL_ttf.h>
-#include <stdio.h>
 
 #include "../include/main.h"
 
@@ -20,11 +19,11 @@ static Uint8 get_b(Uint32 colour) {
     return ((colour << 16) >> 24);
 }
 
-static inline Uint8 get_a(Uint32 colour) {
+static Uint8 get_a(Uint32 colour) {
     return ((colour << 24) >> 24);
 }
 
-static inline Uint32 ghostify(Uint32 colour) {
+static Uint32 ghostify(Uint32 colour) {
     return RGB(get_r(colour) / 2, get_g(colour) / 2, get_b(colour) / 2);
 }
 
@@ -64,6 +63,10 @@ void draw_text(int x, int y, const char* text, TTF_Font* font) {
     SDL_Colour white = {255, 255, 255};
     SDL_Surface* surface = TTF_RenderText_Solid(font, text, white);
 
+    if (!surface) {
+        return;
+    }
+
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
     SDL_Rect rect = {
@@ -86,6 +89,12 @@ void draw_small_text(int x, int y, const char* text) {
 
 void draw_large_text(int x, int y, const char* text) {
     draw_text(x, y, text, large_font);
+}
+
+void draw_large_text_centered_x(int y, const char *text) {
+    int width, height;
+    TTF_SizeText(large_font, text, &width, &height);
+    draw_large_text(SCREEN_CENTRE_X - width / 2, y, text);
 }
 
 void draw_info_value(int row, const char* format, int value) {
@@ -121,15 +130,15 @@ void draw_board(void) {
 
     for (int y = INVISIBLE_ROWS; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
-            draw_mino(x, y, state.board.minos[y][x]);
+            draw_mino(x, y, board[y][x]);
         }
     }
 
-    if (state.held_piece != Piece_Empty) {
-        draw_piece_north(state.held_piece, 1, -3);
+    if (get_held_piece() != Piece_Empty) {
+        draw_piece_north(get_held_piece(), 1, -3);
     }
 
-    if (piece_active()) {
+    if (!piece_active()) {
         return;
     }
         

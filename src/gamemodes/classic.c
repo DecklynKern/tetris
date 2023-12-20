@@ -7,8 +7,8 @@
 // https://meatfighter.com/nintendotetrisai/?a=b#The_Mechanics_of_Nintendo_Tetris
 
 static int start_level = 0;
+static int type_b_garbage_level = 0;
 static int level;
-static int lines;
 static int score;
 
 static MinoType next_piece;
@@ -20,14 +20,13 @@ static Uint16 rng_seed;
 static void nes_init(void) {
     
     level = start_level;
-    lines = 0;
     score = 0;
     total_pieces = 0;
     last_spawned_mino_id = 0;
     rng_seed = 0x8988;
 
     // simulate random number of frames since game was turned on
-    int num_frames = rand() % 100;
+    int num_frames = rand() % 250;
     for (int i = 0; i < num_frames; i++) {
         update_lfsr();
     }
@@ -44,34 +43,17 @@ static void nes_type_b_init(void) {
 
     nes_init();
 
-    for (int y = 0; y < 10; y++) {
+    for (int y = 0; y < 2 * type_b_garbage_level; y++) {
         for (int x = 0; x < 10; x++) {
 
             if (rand() % 2) {
-                state.board.minos[BOARD_HEIGHT - y - 1][x] = Piece_Garbage;
+                board[BOARD_HEIGHT - y - 1][x] = Piece_Garbage;
             }
         }
     }
 }
 
-static void on_line_clear(int num_lines) {
-
-    lines += num_lines;
-
-    if ((level != start_level && lines >= 10) ||
-        (level == start_level && (
-            lines >= start_level * 10 + 10 ||
-            lines >= MAX(100, start_level * 10 - 50)))
-    ) {
-
-        level++;
-        lines -= 10;
-
-        state.gamemode.gravity_factor = gravity_factor_table[level];
-        state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
-        update_colours();
-
-    }
+static void nes_on_line_clear(int num_lines) {
 
     switch (num_lines) {
 
@@ -92,6 +74,28 @@ static void on_line_clear(int num_lines) {
             break;
 
     }
+}
+
+static void nes_type_a_on_line_clear(int num_lines) {
+
+    int lines_cleared = get_lines_cleared();
+
+    if ((level != start_level && lines_cleared % 10 < (lines_cleared - num_lines) % 10) ||
+        (level == start_level && (
+            lines_cleared >= start_level * 10 + 10 ||
+            lines_cleared >= MAX(100, start_level * 10 - 50)))
+    ) {
+
+        level++;
+
+        state.gamemode.gravity_factor = gravity_factor_table[level];
+        state.gamemode.soft_drop_factor = state.gamemode.gravity_factor / 2;
+        update_colours();
+
+    }
+
+    nes_on_line_clear(num_lines);
+    
 }
 
 static void update_lfsr(void) {
@@ -146,7 +150,7 @@ static void draw(void) {
     draw_next(&next_piece, 1);
 
     draw_info_value(0, "Level: %d", level);
-    draw_info_value(1, "Lines: %d", lines);
+    draw_info_value(1, "Lines: %d", get_lines_cleared());
     draw_info_value(2, "Score: %d", score);
 
 }
@@ -154,7 +158,12 @@ static void draw(void) {
 static void nes_type_a_on_exit(void) {
     sprintf(state.result.line1, "Score: %d", score);
     sprintf(state.result.line2, "Level: %d", level);
-    sprintf(state.result.line3, "Lines: %d", lines);
+    sprintf(state.result.line3, "Lines: %d", get_lines_cleared());
+}
+
+static void nes_type_b_on_exit(void) {
+    sprintf(state.result.line1, lines_cleared_at(25) ? "Success" : "Fail");
+    get_timer_formatted(state.result.line2);
 }
 
 // line clear delay 17-20 depending on internal frame counter???
@@ -178,7 +187,6 @@ static void nes_type_a_on_exit(void) {
     .piece_rot_minos = &nrs_right_handed_minos, \
     .piece_colours = (Uint32 (*const)[]) &piece_colours, \
     \
-    .on_line_clear = on_line_clear, \
     .generate_new_piece = new_piece, \
     .update = nes_update, \
     .draw = draw
@@ -188,6 +196,7 @@ const Gamemode nes_type_a_mode = {
     NES_SETTINGS,
 
     .init = nes_init,
+    .on_line_clear = nes_type_a_on_line_clear,
     .on_exit = nes_type_a_on_exit
 
 };
@@ -196,9 +205,11 @@ const Gamemode nes_type_b_mode = {
 
     NES_SETTINGS,
 
+    .max_lines = 25,
+
     .init = nes_type_b_init,
-    // fix
-    .on_exit = nes_type_a_on_exit
+    .on_line_clear = nes_on_line_clear,
+    .on_exit = nes_type_b_on_exit
 
 };
 
@@ -223,9 +234,25 @@ const Gamemode nes_type_b_mode = {
 
 // };
 
-const Menu nes_menu = MENU(
-    NUM_BOX("Start Level:", 0, 19, start_level),
+const Menu nes_menu;
+const Menu nes_type_a_menu = MENU(
+    BUTTON_NEW_MENU("Back", nes_menu),
     SEPARATOR,
-    BUTTON_LOAD_GAMEMODE("Start Type A", nes_type_a_mode),
-    BUTTON_LOAD_GAMEMODE("Start Type B", nes_type_b_mode)
+    NUM_BOX("Speed Level:", 0, 19, start_level),
+    BUTTON_LOAD_GAMEMODE("Start", nes_type_a_mode)
+);
+
+const Menu nes_type_b_menu = MENU(
+    BUTTON_NEW_MENU("Back", nes_menu),
+    SEPARATOR,
+    NUM_BOX("Speed Level:", 0, 19, start_level),
+    NUM_BOX("Garbage Level:", 0, 5, type_b_garbage_level),
+    BUTTON_LOAD_GAMEMODE("Start", nes_type_b_mode)
+);
+
+const Menu nes_menu = MENU(
+    BUTTON_NEW_MENU("Back", main_menu),
+    SEPARATOR,
+    BUTTON_NEW_MENU("Type A", nes_type_a_menu),
+    BUTTON_NEW_MENU("Type B", nes_type_b_menu)
 );

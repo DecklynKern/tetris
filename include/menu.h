@@ -108,7 +108,7 @@ extern int selected_menu_item;
 
 // menu.c
 extern const Menu main_menu;
-extern const Menu results_menu;
+extern Menu results_menu;
 extern const Menu pause_menu;
 
 void load_menu(const Menu* menu);

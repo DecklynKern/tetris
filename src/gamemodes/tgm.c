@@ -7,18 +7,6 @@
 #define HISTORY_LEN 4
 #define NUM_TRIES 4
 
-static const Uint32 piece_colours[9] = {
-    RGB(  0,   0,   0),
-    RGB(255, 255,   0),
-    RGB(255,   0, 255),
-    RGB(  0, 255,   0),
-    RGB(255, 128,   0),
-    RGB(  0,   0, 255),
-    RGB(  0, 255, 255),
-    RGB(255,   0,   0),
-    RGB(200, 200, 200)
-};
-
 static MinoType next_piece;
 static MinoType history[HISTORY_LEN];
 
@@ -77,7 +65,7 @@ static Point get_kick(Rotation new_rotation, int attempt) {
         for (int dy = -1; dy < 2; dy++) {
             for (int dx = -1; dx < 2; dx++) {
 
-                if (state.board.minos[state.piece.y + dy][state.piece.x + dx]) {
+                if (board[state.piece.y + dy][state.piece.x + dx]) {
 
                     if (dx == 0) {
                         return (Point){0, 0};
@@ -117,11 +105,11 @@ static void tap_tgmplus_on_lock(bool cleared_lines) {
         if (tgmplus_garbage_counter >= 13 - level / 100) {
 
             for (int y = 1; y < BOARD_HEIGHT; y++) {
-                memcpy(state.board.minos[y - 1], state.board.minos[y], ROW_BYTES);
+                memcpy(board[y - 1], board[y], ROW_BYTES);
             }
 
             for (int x = 0; x < BOARD_WIDTH; x++) {
-                state.board.minos[BOARD_HEIGHT - 1][x] = tgmplus_garbage_rows[tgmplus_garbage_row][x] ? Piece_Garbage : Piece_Empty;
+                board[BOARD_HEIGHT - 1][x] = tgmplus_garbage_rows[tgmplus_garbage_row][x] ? Piece_Garbage : Piece_Empty;
             }
         
             tgmplus_garbage_counter = 0;
@@ -185,9 +173,8 @@ static void tap_master_on_line_clear(int num_lines) {
     if (internal_score > 100) {
 
         internal_score = 0;
-        internal_grade++;
 
-        if (internal_grade == NUM_GRADES) {
+        if (++internal_grade == NUM_GRADES) {
             internal_grade = NUM_GRADES - 1;
         }
 
@@ -258,7 +245,7 @@ static MinoType generate_new_piece(void) {
 
 static void tgm_update(void) {
 
-    if (state.input_held[Input_Down]) {
+    if (down_is_held()) {
         soft++;
     }
 }
@@ -395,6 +382,8 @@ const Gamemode tap_death_mode = {
 };
 
 const Menu tgm_menu = MENU(
+    BUTTON_NEW_MENU("Back", main_menu),
+    SEPARATOR,
     BUTTON_LOAD_GAMEMODE("TGM1", tgm1_mode),
     BUTTON_LOAD_GAMEMODE("TAP Master", tap_master_mode),
     BUTTON_LOAD_GAMEMODE("TAP TGM+", tap_tgmplus_mode),

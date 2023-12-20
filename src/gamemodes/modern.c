@@ -114,7 +114,6 @@ static const Point srs_i_kicks[4][4][KICK_TRIES] = {
 };
 
 static MinoType bag[14];
-static int lines_cleared;
 
 static void new_bag(void) {
 
@@ -139,13 +138,9 @@ static void new_bag(void) {
 }
 
 static void init(void) {
-
     new_bag();
     memcpy(bag, bag + 7, 7 * sizeof(MinoType));
     new_bag();
-
-    lines_cleared = 0;
-
 }
 
 static Point get_kick(Rotation new_rotation, int attempt) {
@@ -156,18 +151,6 @@ static Point get_kick(Rotation new_rotation, int attempt) {
 
     return (state.piece.type == Piece_I ? srs_i_kicks : srs_szljt_kicks)[state.piece.rotation][new_rotation][attempt - 1];
 
-}
-
-static void on_line_clear(int num_lines) {
-    lines_cleared += num_lines;
-}
-
-static void sprint_update(void) {
-    state.quit_to_main_menu = lines_cleared >= 40;
-}
-
-static void marathon_update(void) {
-    state.quit_to_main_menu = lines_cleared >= 150;
 }
 
 static MinoType generate_new_piece(void) {
@@ -196,17 +179,12 @@ static void draw(void) {
 static void sprint_draw(void) {
     draw();
     draw_info_timer(0);
-    draw_info_value(1, "lines %d", lines_cleared);
-}
-
-static void no_result_on_exit(void) {
+    draw_info_value(1, "lines %d", get_lines_cleared());
 }
 
 static void speed_on_exit(int target_lines) {
-    
-    sprintf(state.result.line1, (lines_cleared > target_lines) ? "Success" : "Fail");
-    sprintf(state.result.line2, "Time: %");
-    
+    sprintf(state.result.line1, lines_cleared_at(target_lines) ? "Success" : "Fail");
+    get_timer_formatted(state.result.line2);
 }
 
 static void sprint_on_exit(void) {
@@ -223,6 +201,7 @@ static void marathon_on_exit(void) {
     .can_hold = true, \
     .lock_on_down_held = false, \
     .irs = false, \
+    .move_rotate_lock_reset_max = 10, \
     .instant_drop_type = Drop_Hard, \
     .socd_allow_das_overwrite = SOCD_Both, \
     .num_kicks = 4, \
@@ -231,41 +210,72 @@ static void marathon_on_exit(void) {
     \
     .init = init, \
     .get_kick = get_kick, \
-    .on_line_clear = on_line_clear, \
     .generate_new_piece = generate_new_piece
 
-static const Gamemode ppt1_mode = {
+#define PPT1_SETTINGS \
+    \
+    MODERN_SETTINGS, \
+    \
+    .line_clear_delay = 35, \
+    .are_delay = 7, \
+    .lock_delay = 30, \
+    .das_delay = 10, \
+    .arr_delay = 2, \
+    .soft_drop_factor = 256, \
+    .gravity = 4, \
+    .gravity_factor = 256
 
-    MODERN_SETTINGS,
+static const Gamemode ppt1_infinite_mode = {
 
-    .line_clear_delay = 35,
-    .are_delay = 7,
-    .lock_delay = 30,
-    .das_delay = 10,
-    .arr_delay = 2,
-    .soft_drop_factor = 256,
-    .gravity = 4,
-    .gravity_factor = 256,
+    PPT1_SETTINGS,
 
-    .draw = draw,
-    .on_exit = no_result_on_exit
+    .draw = draw
+
+};
+
+static const Gamemode ppt1_sprint_mode = {
+
+    PPT1_SETTINGS,
+
+    .draw = sprint_draw,
+    .on_exit = sprint_on_exit
+
+};
+
+static const Gamemode ppt1_marathon_mode = {
+
+    PPT1_SETTINGS,
+
+    .draw = sprint_draw,
+    .on_exit = sprint_on_exit
+
+};
+
+#define FAST_SETTINGS \
+    \
+    MODERN_SETTINGS, \
+    \
+    .line_clear_delay = 0, \
+    .are_delay = 0, \
+    .lock_delay = 30, \
+    .das_delay = 7, \
+    .arr_delay = 0, \
+    .soft_drop_factor = 5120, \
+    .gravity = 4, \
+    .gravity_factor = 256
+
+static const Gamemode fast_infinite_mode = {
+
+    FAST_SETTINGS,
+
+    .draw = draw
 
 };
 
 static const Gamemode fast_sprint_mode = {
 
-    MODERN_SETTINGS,
+    FAST_SETTINGS,
 
-    .line_clear_delay = 0,
-    .are_delay = 0,
-    .lock_delay = 30,
-    .das_delay = 7,
-    .arr_delay = 0,
-    .soft_drop_factor = 5120,
-    .gravity = 4,
-    .gravity_factor = 256,
-
-    .update = sprint_update,
     .draw = sprint_draw,
     .on_exit = sprint_on_exit
 
@@ -273,25 +283,21 @@ static const Gamemode fast_sprint_mode = {
 
 static const Gamemode fast_marathon_mode = {
 
-    MODERN_SETTINGS,
+    FAST_SETTINGS,
 
-    .line_clear_delay = 0,
-    .are_delay = 0,
-    .lock_delay = 30,
-    .das_delay = 7,
-    .arr_delay = 0,
-    .soft_drop_factor = 5120,
-    .gravity = 4,
-    .gravity_factor = 256,
-
-    .update = marathon_update,
     .draw = sprint_draw,
     .on_exit = marathon_on_exit
 
 };
 
 const Menu modern_menu = MENU(
-    BUTTON_LOAD_GAMEMODE("PPT 1", ppt1_mode),
+    BUTTON_NEW_MENU("Back", main_menu),
+    SEPARATOR,
+    BUTTON_LOAD_GAMEMODE("PPT 1 Infinite", ppt1_infinite_mode),
+    BUTTON_LOAD_GAMEMODE("PPT 1 Sprint", ppt1_sprint_mode),
+    BUTTON_LOAD_GAMEMODE("PPT 1 Marathon", ppt1_marathon_mode),
+    SEPARATOR,
+    BUTTON_LOAD_GAMEMODE("Fast Infinite", fast_infinite_mode),
     BUTTON_LOAD_GAMEMODE("Fast Sprint", fast_sprint_mode),
     BUTTON_LOAD_GAMEMODE("Fast Marathon", fast_marathon_mode)
 );

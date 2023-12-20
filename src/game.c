@@ -2,22 +2,40 @@
 #include <string.h>
 
 #include "../include/main.h"
+#include "../include/input.h"
+
+MinoType board[BOARD_HEIGHT][BOARD_WIDTH];
         
 static int das_timer;
 static int das_direction;
-static bool in_lock_delay;
 static int lock_delay_timer;
 static int gravity_count;
 static bool down_held;
 
+static bool piece_had_down_held_movement;
+static int move_rotate_lock_reset_count;
+
 static int line_clear_timer;
 static int are_timer;
+
+static bool has_held;
+static MinoType held_piece;
+
+static int total_lines_cleared;
+
+bool down_is_held(void) {
+    return down_held;
+}
+
+MinoType get_held_piece(void) {
+    return held_piece;
+}
 
 bool board_is_clear(void) {
 
     for (int y = 0; y < BOARD_HEIGHT; y++) {
         for (int x = 0; x < BOARD_WIDTH; x++) {
-            if (state.board.minos[y][x] != Piece_Empty) {
+            if (board[y][x] != Piece_Empty) {
                 return false;
             }
         }
@@ -28,7 +46,7 @@ bool board_is_clear(void) {
 }
 
 bool piece_active() {
-    return state.line_clear_timer != -1 || state.are_timer != -1;
+    return line_clear_timer == -1 && are_timer == -1;
 }
 
 bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
@@ -42,7 +60,7 @@ bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
             return false;
         }
 
-        if (state.board.minos[mino_y][mino_x] != Piece_Empty) {
+        if (board[mino_y][mino_x] != Piece_Empty) {
             return false;
         }
     }
@@ -51,8 +69,26 @@ bool placement_valid(const Point* piece_minos, int piece_x, int piece_y) {
 
 }
 
+bool lines_cleared_at(int at) {
+    return total_lines_cleared >= at;
+}
+
+int get_lines_cleared(void) {
+    return total_lines_cleared;
+}
+
+void board_clear(void) {
+    memset(board, Piece_Empty, sizeof(board));
+}
+
 static bool current_placement_valid(void) {
     return placement_valid(get_piece_minos(), state.piece.x, state.piece.y);
+}
+
+static void try_move_rotate_reset_lock_delay(void) {
+    if (++move_rotate_lock_reset_count < state.gamemode.move_rotate_lock_reset_max) {
+        lock_delay_timer = state.gamemode.lock_delay;
+    }
 }
 
 static void lock_piece(void) {
@@ -60,7 +96,7 @@ static void lock_piece(void) {
     int lines_cleared = 0;
 
     for (int i = 0; i < PIECE_MINO_COUNT; i++) {
-        state.board.minos[state.piece.y + get_piece_minos()[i].y][state.piece.x + get_piece_minos()[i].x] = state.piece.type;
+        board[state.piece.y + get_piece_minos()[i].y][state.piece.x + get_piece_minos()[i].x] = state.piece.type;
     }
 
     for (int y = 0; y < BOARD_HEIGHT; y++) {
@@ -69,7 +105,7 @@ static void lock_piece(void) {
 
         for (int x = 0; x < BOARD_WIDTH; x++) {
 
-            if (state.board.minos[y][x] == Piece_Empty) {
+            if (board[y][x] == Piece_Empty) {
                 full_line = 0;
                 break;
             }
@@ -80,26 +116,23 @@ static void lock_piece(void) {
             lines_cleared++;
 
             for (int above_y = y; above_y > 0; above_y--) {
-                memcpy(state.board.minos[above_y], state.board.minos[above_y - 1], ROW_BYTES);
+                memcpy(board[above_y], board[above_y - 1], ROW_BYTES);
             }
 
-            memset(state.board.minos[0], 0, ROW_BYTES);
+            memset(board[0], 0, ROW_BYTES);
 
         }
     }
 
-    in_lock_delay = false;
-
-    if (state.gamemode.on_lock) {
-        state.gamemode.on_lock((bool)lines_cleared);
-    }
+    total_lines_cleared += lines_cleared;
+    TRY_CALL(state.gamemode.on_lock, (bool) lines_cleared);
     
     if (lines_cleared) {
-        state.line_clear_timer = state.gamemode.line_clear_delay;
-        state.gamemode.on_line_clear(lines_cleared);
+        line_clear_timer = state.gamemode.line_clear_delay;
+        TRY_CALL(state.gamemode.on_line_clear, lines_cleared);
     }
     else {
-        state.are_timer = state.gamemode.are_delay;
+        are_timer = state.gamemode.are_delay;
     }
 }
 
@@ -140,7 +173,8 @@ static void try_rotate(int rotation_amount) {
     state.piece.x += kick.x;
     state.piece.y += kick.y;
     state.piece.rotation = new_rotation;
-    lock_delay_timer = state.gamemode.lock_delay;
+
+    try_move_rotate_reset_lock_delay();
 
 }
 
@@ -159,16 +193,19 @@ static void new_piece(void) {
     reset_position();
 
     state.piece.type = (*state.gamemode.generate_new_piece)();
-    state.has_held = false;
+    has_held = false;
+    piece_had_down_held_movement = false;
+    move_rotate_lock_reset_count = 0;
+    lock_delay_timer = -1;
 
     if (!state.gamemode.irs) {
         return;
     }
 
-    if (state.input_held[Input_Rot_CCW]) {
+    if (input_held[Input_Rot_CCW]) {
         state.piece.rotation = Rot_W;
     }
-    else if (state.input_held[Input_Rot_CW]) {
+    else if (input_held[Input_Rot_CW]) {
         state.piece.rotation = Rot_E;    
     }
     else {
@@ -186,8 +223,10 @@ void input_left(void) {
         return;
     }
 
-    if (state.line_clear_timer == -1 && state.are_timer == -1) {
-        try_move(-1, 0);
+    if (piece_active()) {
+        if (try_move(-1, 0)) {
+            try_move_rotate_reset_lock_delay();
+        }
     }
 
     das_timer = state.gamemode.das_delay;
@@ -201,8 +240,10 @@ void input_right(void) {
         return;
     }
 
-    if (line_clear_timer == -1 && are_timer == -1) {
-        try_move(1, 0);
+    if (piece_active()) {
+        if (try_move(1, 0)) {
+            try_move_rotate_reset_lock_delay();
+        }
     }
 
     das_timer = state.gamemode.das_delay;
@@ -211,10 +252,15 @@ void input_right(void) {
 }
 
 void input_down(void) {
+    piece_had_down_held_movement = true;
     down_held = true;
 }
 
 void input_instant_drop(void) {
+
+    if (!piece_active()) {
+        return;
+    }
 
     if (state.gamemode.instant_drop_type == Drop_NoInstant) {
         return;
@@ -228,38 +274,38 @@ void input_instant_drop(void) {
 }
 
 void input_rotate_ccw(void) {
-    if (state.line_clear_timer == -1 && state.are_timer == -1) {
+    if (piece_active()) {
         try_rotate(-1);
     }
 }
 
 void input_rotate_cw(void) {
-    if (state.line_clear_timer == -1 && state.are_timer == -1) {
+    if (piece_active()) {
         try_rotate(1);
     }
 }
 
 void input_hold(void) {
 
-    if (!state.gamemode.can_hold || state.has_held || state.are_timer != -1 || state.line_clear_timer != -1) {
+    if (!state.gamemode.can_hold || has_held || !piece_active()) {
         return;
     }
 
-    if (state.held_piece) {
+    if (held_piece) {
 
-        MinoType temp = state.held_piece;
-        state.held_piece = state.piece.type;
+        MinoType temp = held_piece;
+        held_piece = state.piece.type;
         state.piece.type = temp;
 
         reset_position();
 
     }
     else {
-        state.held_piece = state.piece.type;
+        held_piece = state.piece.type;
         new_piece();
     }
 
-    state.has_held = true;
+    has_held = true;
 
 }
 
@@ -270,7 +316,7 @@ void release_left(void) {
         das_timer = -1;
     }
 
-    if (state.input_held[Input_Right]) {
+    if (input_held[Input_Right]) {
         input_right();
     }
 }
@@ -282,7 +328,7 @@ void release_right(void) {
         das_timer = -1;
     }
 
-    if (state.input_held[Input_Left]) {
+    if (input_held[Input_Left]) {
         input_left();
     }
 }
@@ -293,19 +339,18 @@ void release_down(void) {
 
 void game_init(void) {
 
-    memset(state.board.minos, Piece_Empty, sizeof(state.board.minos));
-
     das_timer = -1;
     das_direction = 0;
-    in_lock_delay = false;
     gravity_count = 0;
     down_held = false;
     
-    state.quit_to_main_menu = false;
-    state.held_piece = Piece_Empty;
-    state.has_held = false;
-    state.line_clear_timer = -1;
-    state.are_timer = -1;
+    held_piece = Piece_Empty;
+    line_clear_timer = -1;
+    are_timer = -1;
+
+    has_held = false;
+
+    total_lines_cleared = 0;
 
     new_piece();
 
@@ -313,6 +358,35 @@ void game_init(void) {
 
 const Point* get_piece_minos(void) {
     return (const Point*) &(*state.gamemode.piece_rot_minos)[state.piece.type - 1][state.piece.rotation];
+}
+
+static bool apply_gravity(int amount) {
+
+    bool applied_gravity = false;
+
+    gravity_count += amount;
+
+    while (gravity_count > state.gamemode.gravity_factor) {
+
+        gravity_count -= state.gamemode.gravity_factor;
+
+        if (try_move(0, 1)) {
+            lock_delay_timer = -1;
+            move_rotate_lock_reset_count = 0;
+            applied_gravity = true;
+            continue;
+        }
+
+        if (lock_delay_timer == -1) {
+            lock_delay_timer = state.gamemode.lock_delay;
+        }
+
+        break;
+
+    }
+
+    return applied_gravity;
+
 }
 
 void update(void) {
@@ -323,77 +397,56 @@ void update(void) {
     if (das_timer > 0) {
         das_timer--;
     }
-    else while (das_timer == 0) {
+    
+    while (das_timer == 0) {
         
         das_timer = state.gamemode.arr_delay;
     
-        if (!try_move(das_direction, 0)) {
+        if (!piece_active() || !try_move(das_direction, 0)) {
             break;
+        }
+    }
+
+    if (line_clear_timer != -1) {
+
+        if (--line_clear_timer == -1) {
+            are_timer = state.gamemode.are_delay;
+        }
+        else {
+            return;
         }
     }
 
     if (are_timer != -1) {
 
-        are_timer--;
-
-        if (are_timer == -1) {
+        if (--are_timer == -1) {
 
             new_piece();
 
             if (!current_placement_valid()) {
-                state.quit_to_main_menu = true;
+                set_exit_game();
                 return;
             }
         }
-
-        return;
-
+        else {
+            return;
+        }
     }
 
-    if (line_clear_timer != -1) {
+    apply_gravity(state.gamemode.gravity);
 
-        line_clear_timer--;
-
-        if (line_clear_timer == -1) {
-            are_timer = state.gamemode.are_delay;
-        }
-
-        return;
-
-    }
-
-    if (down_held) {
-        gravity_count += state.gamemode.soft_drop_factor;
-    }
-
-    gravity_count += state.gamemode.gravity;
-
-    while (gravity_count > state.gamemode.gravity_factor) {
-
-        gravity_count -= state.gamemode.gravity_factor;
-
-        if (try_move(0, 1)) {
-            continue;
-        }
-
-        if (!in_lock_delay) {
-            in_lock_delay = true;
-            lock_delay_timer = state.gamemode.lock_delay;
-        }
-
-        break;
-
+    if (down_held && apply_gravity(state.gamemode.soft_drop_factor)) {
+        piece_had_down_held_movement = true;
     }
 
     if (placement_valid(get_piece_minos(), state.piece.x, state.piece.y + 1)) {
-        in_lock_delay = false;
-        lock_delay_timer = state.gamemode.lock_delay;
+        lock_delay_timer = -1;
     }
-    else if (in_lock_delay) {
+    else if (lock_delay_timer != -1) {
 
         gravity_count = 0;
 
-        if (!lock_delay_timer || (down_held && state.gamemode.lock_on_down_held)) {
+        if (!lock_delay_timer || (down_held && state.gamemode.lock_on_down_held && piece_had_down_held_movement)) {
             lock_piece();
         }
         else {
@@ -401,7 +454,10 @@ void update(void) {
         }
     }
 
-    if (state.gamemode.update) {
-        state.gamemode.update();
+    if (state.gamemode.max_lines && total_lines_cleared >= state.gamemode.max_lines) {
+        set_exit_game();
     }
+
+    TRY_CALL(state.gamemode.update);
+
 }

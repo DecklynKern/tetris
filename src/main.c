@@ -1,7 +1,3 @@
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_scancode.h>
-#include <stdio.h>
-#include <math.h>
 #include <time.h>
 #ifdef __EMSCRIPTEN__
     #include <emscripten.h>
@@ -10,18 +6,8 @@
     #define SDL_FLAGS SDL_INIT_EVERYTHING
 #endif
 
-#include "../include/main.h"
 #include "../include/menu.h"
-
-const SDL_Scancode mapped_keys[NUM_HOLDABLE_KEYS] = {
-    SDL_SCANCODE_LEFT,
-    SDL_SCANCODE_RIGHT,
-    SDL_SCANCODE_DOWN,
-    SDL_SCANCODE_UP,
-    SDL_SCANCODE_Z,
-    SDL_SCANCODE_X,
-    SDL_SCANCODE_C
-};
+#include "../include/input.h"
 
 GameData state = {0};
 static SDL_Window* window;
@@ -29,15 +15,13 @@ SDL_Renderer* renderer;
  
 static const Uint8* key_state;
 
-static bool in_menu(void) {
-    return current_menu;
+static bool exit_game = false;
+
+void set_exit_game(void) {
+    exit_game = true;
 }
 
-static bool in_game(void) {
-    return !current_menu;
-}
-
-static void do_quit(void) {
+void do_quit(void) {
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -60,106 +44,33 @@ static void tick(void) {
             break;
 
         case SDL_KEYDOWN:
-
-            if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-                
-                if (current_menu == &pause_menu) {
-                    current_menu = NULL;
-                    timer_unpause();
-                }
-                else if (in_game()) {
-                    load_menu(&pause_menu);
-                    timer_pause();
-                }
-
-                continue;
-
-            }
-
-            if (in_menu()) {
-                
-                switch (event.key.keysym.scancode) {
-                    case SDL_SCANCODE_UP:
-                        menu_move_up();
-                        break;
-                    case SDL_SCANCODE_DOWN:
-                        menu_move_down();
-                        break;
-                    case SDL_SCANCODE_RETURN:
-                    case SDL_SCANCODE_SPACE:
-                        menu_select();
-                        break;
-                    default:
-                        menu_handle_key(event.key.keysym.scancode);
-                }
-                
-                continue;
-                
-            }
-
-            if (event.key.repeat) {
-                continue;
-            }
-
-            if (event.key.keysym.scancode == mapped_keys[Input_Left]) {
-                input_left();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
-                input_right();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Down]) {
-                input_down();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_InstantDrop]) {
-                input_instant_drop();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CCW]) {
-                input_rotate_ccw();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Rot_CW]) {
-                input_rotate_cw();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Hold]) {
-                input_hold();
-            }
-
+            handle_keydown(event.key.keysym.scancode, event.key.repeat);
             break;
 
         case SDL_KEYUP:
+            handle_keyup(event.key.keysym.scancode);
+            break;
 
-            if (in_menu() || event.key.repeat) {
-                continue;
-            }
-
-            if (event.key.keysym.scancode == mapped_keys[Input_Left]) {
-                release_left();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Right]) {
-                release_right();
-            }
-            else if (event.key.keysym.scancode == mapped_keys[Input_Down]) {
-                release_down();
-            }
         }
     }
 
     for (int key = 0; key < NUM_HOLDABLE_KEYS; key++) {
-        state.input_held[key] = key_state[mapped_keys[key]];
+        input_held[key] = key_state[mapped_keys[key]];
     }
 
-    if (in_game()) {
-
-        state.timer_ms = get_timer_seconds() * 1000;
+    if (!current_menu) {
 
         update();
         
-        if (state.quit_to_main_menu) {
+        if (exit_game) {
+
+            exit_game = false;
             
             memset(state.result.line1, 0, sizeof(state.result.line1));
             memset(state.result.line2, 0, sizeof(state.result.line2));
             memset(state.result.line3, 0, sizeof(state.result.line3));
             
-            state.gamemode.on_exit();
+            TRY_CALL(state.gamemode.on_exit);
             load_menu(&results_menu);
             
         }
@@ -168,7 +79,7 @@ static void tick(void) {
     SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
     SDL_RenderClear(renderer);
     
-    if (in_game()) {
+    if (!current_menu) {
         state.gamemode.draw();
     }
     else {
